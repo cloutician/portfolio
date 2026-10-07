@@ -1,0 +1,512 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="George Onyemenam is an ML engineer and software developer building scientific-imaging, computer-vision, mobile, and cloud systems.">
+    <meta name="theme-color" content="#0a0a0a">
+    <script>
+      (() => {
+        const userAgent = navigator.userAgent || "";
+        const compactTouchScreen = navigator.maxTouchPoints > 0
+          && Math.min(window.screen.width, window.screen.height) <= 500;
+        const mobileUserAgent = /iPhone|iPod|Android.+Mobile/i.test(userAgent)
+          || navigator.userAgentData?.mobile === true;
+        if (compactTouchScreen || mobileUserAgent) {
+          document.documentElement.classList.add("is-handset");
+        }
+      })();
+    </script>
+    <link rel="icon" type="image/png" sizes="64x64" href="/assets/brand/site-mark-64.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/assets/brand/site-mark-180.png">
+    <title>George Onyemenam | ML Engineer &amp; Software Developer</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preload" as="image" type="image/png" fetchpriority="low" href="/assets/demos/worm-slider-lens-magnify.png?v=20260930-01">
+    <link rel="preload" as="image" type="image/png" fetchpriority="low" href="/assets/demos/worm-slider-lens-bezel.png?v=20260930-01">
+    <link rel="preload" as="image" type="image/png" fetchpriority="low" href="/assets/demos/worm-slider-lens-specular.png?v=20260930-01">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap">
+    <link rel="stylesheet" href="/styles.css?v=20261001-01">
+    <script type="module" src="/script.js?v=20260930-22"></script>
+  </head>
+  <body class="is-loading">
+    <a class="skip-link" href="#main">Skip to content</a>
+    <header class="site-header" data-header>
+      <span class="scroll-progress" id="scroll-progress" aria-hidden="true"></span>
+      <a class="brand" href="#top" data-magnetic aria-label="George Onyemenam, home">
+        <img src="/assets/brand/site-mark-64.png" width="30" height="30" alt="">
+      </a>
+      <nav class="site-nav" aria-label="Primary navigation">
+        <a href="#work-heading" data-nav="work">Work</a>
+        <a href="#about" data-nav="about">About</a>
+        <a href="#contact" data-nav="contact">Contact</a>
+      </nav>
+      <span class="header-note"><i aria-hidden="true"></i> Available for work</span>
+    </header>
+
+    <main id="main">
+      <section class="hero" id="top" aria-labelledby="hero-title">
+        <canvas class="hero-canvas" id="hero-canvas" aria-hidden="true"></canvas>
+        <span class="hero-sidelabel" aria-hidden="true">Portfolio &mdash; MMXXVI</span>
+
+        <div class="hero-copy">
+          <p class="hero-badge"><i aria-hidden="true"></i> ML engineer / Software developer</p>
+          <h1 class="hero-title" id="hero-title">
+            <span class="mask"><span class="mask-inner">George</span></span>
+            <span class="hero-surname">Onyemenam</span>
+          </h1>
+          <p class="hero-intro">
+            I build software that finds useful information in images. Worm Profiler turns
+            planarian camera captures into measurements. Touchline tracks football players and
+            maps broadcast footage onto a pitch. I also build mobile apps and
+            <span class="hero-accent">cloud infrastructure</span>, and occasionally take apart Android games
+            to see how they work.
+          </p>
+        </div>
+
+        <div class="hero-footer">
+          <div class="hero-actions">
+            <a class="hero-cta" href="#work-heading" data-magnetic>View case studies <span aria-hidden="true">&#8595;</span></a>
+            <a class="hero-text-link" href="mailto:george.onyemenam@gmail.com?subject=CV%20request%20%E2%80%94%20George%20Onyemenam">Request CV</a>
+          </div>
+          <span class="hero-meta hero-meta-end"><b>Based</b> London, UK</span>
+        </div>
+
+        <span class="hero-scroll" aria-hidden="true">Scroll</span>
+      </section>
+
+      <section class="work-section" id="work" aria-labelledby="work-title">
+        <div class="section-heading" id="work-heading" data-reveal>
+          <p class="section-index">01 &mdash; Work</p>
+          <h2 id="work-title" data-scramble><span class="scramble-word">Selected</span><span class="scramble-word"> projects</span></h2>
+        </div>
+
+        <div class="work-layout" data-reveal>
+          <div class="project-index" id="project-index" aria-label="Project index"></div>
+
+          <aside class="project-stage" id="project-stage" tabindex="-1" aria-label="Active project preview" aria-live="polite">
+            <canvas id="project-canvas" aria-hidden="true"></canvas>
+            <video id="project-video" muted loop playsinline preload="metadata" hidden></video>
+            <div class="project-placeholder-stage" id="project-placeholder" hidden>
+              <span class="placeholder-slot-number" aria-hidden="true">03</span>
+              <button class="worm-reset placeholder-camera-reset" id="oiia-cat-reset" type="button" aria-label="Reset 3D model camera angle" hidden>Reset</button>
+              <p class="placeholder-status"><i aria-hidden="true"></i> Upload queue</p>
+              <div class="placeholder-card">
+                <figure class="placeholder-cat-frame">
+                  <canvas id="oiia-cat-canvas" aria-label="Interactive 3D model of the OIIAIOOO spinning cat. Drag to orbit and scroll or pinch to zoom."></canvas>
+                  <p class="placeholder-cat-loading" id="oiia-cat-loading" role="status">Loading 3D cat&hellip;</p>
+                </figure>
+                <div class="placeholder-copy">
+                  <h3>More projects soon.</h3>
+                  <p>Two case studies are still being prepared. Rotate the cat while you wait.</p>
+                </div>
+              </div>
+            </div>
+            <div class="touchline-stage-lite" id="touchline-stage-lite" hidden>
+              <aside class="tl-lite-rail" aria-label="Touchline pipeline">
+                <div class="tl-lite-rail-title"><span>Pipeline</span><b>4 stages</b></div>
+                <button type="button" aria-disabled="true"><span>01</span><strong>Source<small>Video and clip range</small></strong></button>
+                <button type="button" class="is-active" aria-pressed="true"><span>02</span><strong>Players<small>Detection and tracks</small></strong></button>
+                <button type="button" aria-disabled="true"><span>03</span><strong>Pitch<small>Camera calibration</small></strong></button>
+                <button type="button" aria-disabled="true"><span>04</span><strong>Project<small>Metric coordinates</small></strong></button>
+              </aside>
+
+              <section class="tl-lite-workspace" aria-label="Touchline player tracking demo">
+                <div class="tl-lite-toolbar">
+                  <div class="tl-lite-tabs" aria-label="Viewport mode">
+                    <button type="button" aria-disabled="true">Original</button>
+                    <button type="button" class="is-active" aria-pressed="true">Overlay</button>
+                    <button type="button" aria-disabled="true">Tactical</button>
+                    <button type="button" aria-disabled="true">3D scene</button>
+                  </div>
+                  <span class="tl-lite-engine"><i aria-hidden="true"></i> Dataset preview</span>
+                </div>
+
+                <div class="tl-lite-viewport">
+                  <div class="tl-lite-media">
+                    <div class="tl-lite-frame-layer is-current" data-touchline-frame-layer>
+                      <img src="/assets/demos/touchline/frames/000396.webp" alt="SoccerNet football frame with Touchline player tracking overlay">
+                      <div class="tl-lite-tracks" aria-hidden="true"></div>
+                    </div>
+                    <div class="tl-lite-frame-layer" data-touchline-frame-layer aria-hidden="true">
+                      <img alt="">
+                      <div class="tl-lite-tracks" aria-hidden="true"></div>
+                    </div>
+                    <div class="tl-lite-readout"><span id="touchline-frame-label">Preview 080 / 150</span><b>Kick-off · labelled sequence</b></div>
+                  </div>
+                </div>
+
+                <div class="tl-lite-timeline">
+                  <div class="tl-lite-timeline-top">
+                    <div class="tl-lite-timecode">
+                      <small>Playhead</small>
+                      <strong id="touchline-clock">00:15.84</strong>
+                      <span>/ 00:30.00</span>
+                    </div>
+                    <div class="tl-lite-transport">
+                      <button id="touchline-previous" class="is-step is-previous" type="button" aria-label="Previous Touchline preview frame"><span aria-hidden="true"></span></button>
+                      <button id="touchline-play" class="is-play" data-state="play" type="button" aria-label="Play Touchline demo"><span aria-hidden="true"></span></button>
+                      <button id="touchline-next" class="is-step is-next" type="button" aria-label="Next Touchline preview frame"><span aria-hidden="true"></span></button>
+                    </div>
+                    <div class="tl-lite-preview-count">
+                      <small>Annotated preview</small>
+                      <strong id="touchline-sample-label">080 / 150</strong>
+                      <span>samples · 1×</span>
+                    </div>
+                  </div>
+                  <div class="tl-lite-sequence" id="touchline-sequence" tabindex="0" role="slider" aria-label="Touchline annotated preview" aria-valuemin="1" aria-valuemax="150" aria-valuenow="80" aria-valuetext="Preview 80 of 150">
+                    <div class="tl-lite-sequence-head" aria-hidden="true">
+                      <span>Sequence 01 · Overlay</span>
+                      <i style="--event: 3%">Kick-off</i>
+                      <i style="--event: 39%">Player tracks</i>
+                      <i style="--event: 77%">Pitch projection</i>
+                      <b>30 sec</b>
+                    </div>
+                    <div class="tl-lite-filmstrip" id="touchline-filmstrip" aria-hidden="true"></div>
+                    <div class="tl-lite-activity" aria-hidden="true">
+                      <span>Annotation density</span>
+                      <div><i style="--h:42%"></i><i style="--h:68%"></i><i style="--h:84%"></i><i style="--h:73%"></i><i style="--h:92%"></i><i style="--h:81%"></i><i style="--h:96%"></i><i style="--h:74%"></i><i style="--h:89%"></i><i style="--h:100%"></i><i style="--h:78%"></i><i style="--h:91%"></i><i style="--h:86%"></i><i style="--h:69%"></i><i style="--h:94%"></i><i style="--h:82%"></i><i style="--h:97%"></i><i style="--h:76%"></i><i style="--h:88%"></i><i style="--h:98%"></i><i style="--h:81%"></i><i style="--h:92%"></i><i style="--h:72%"></i><i style="--h:87%"></i></div>
+                      <b>2,536 labels</b>
+                    </div>
+                    <span class="tl-lite-playhead" id="touchline-playhead" aria-hidden="true"></span>
+                  </div>
+                </div>
+              </section>
+
+            </div>
+            <div class="worm-stage" id="worm-stage" data-worm-id="3746" aria-busy="true" hidden>
+              <p class="worm-loading" role="status">Preloading camera-image set · 0 / 6</p>
+              <div class="worm-media" id="worm-media">
+                <img
+                  class="worm-source"
+                  src="/assets/demos/worm-profiler-stage.webp"
+                  alt="Camera image containing a planarian worm"
+                  decoding="async"
+                  loading="lazy"
+                  fetchpriority="low"
+                >
+              </div>
+
+              <div class="worm-reveal-viewport" aria-hidden="true">
+                <div class="worm-overlay-media">
+                  <span class="worm-overlay-background"></span>
+                  <img
+                    class="worm-segmentation"
+                    src="/assets/demos/worm-profiler-segmentation-tiff.webp"
+                    alt=""
+                    decoding="async"
+                    loading="lazy"
+                    fetchpriority="low"
+                  >
+                </div>
+              </div>
+
+              <button
+                class="worm-zoom-trigger"
+                id="worm-zoom-trigger"
+                type="button"
+                aria-label="Zoom into the selected worm region"
+              >
+                <span class="roi-target" aria-hidden="true">
+                  <i></i><i></i><i></i><i></i>
+                  <span class="roi-readout">
+                    <span class="roi-readout-marker" aria-hidden="true"></span>
+                    <span class="roi-readout-copy">
+                      <img src="/assets/demos/region-of-interest.svg" alt="Region of Interest">
+                      <span class="roi-dimensions" id="roi-dimensions">837 &times; 942 px</span>
+                    </span>
+                  </span>
+                </span>
+              </button>
+
+              <div class="worm-key" aria-label="Segmentation key">
+                <span class="worm-key-row">
+                  <i class="key-donor" aria-hidden="true"></i>
+                  <img src="/assets/demos/key-donor.svg" alt="Donor">
+                </span>
+                <span class="worm-key-row">
+                  <i class="key-background" aria-hidden="true"></i>
+                  <img src="/assets/demos/key-background.svg" alt="Background">
+                </span>
+                <span class="worm-key-row">
+                  <i class="key-host" aria-hidden="true"></i>
+                  <img src="/assets/demos/key-host.svg" alt="Host">
+                </span>
+                <span class="worm-key-row">
+                  <i class="key-eyes" aria-hidden="true"></i>
+                  <img src="/assets/demos/key-eyes.svg" alt="Eyes">
+                </span>
+              </div>
+
+            </div>
+            <div class="worm-compare" id="worm-compare" hidden>
+              <svg width="0" height="0" aria-hidden="true" focusable="false">
+                <defs>
+                  <filter id="worm-slider-lens-filter" color-interpolation-filters="sRGB" data-worm-lens-filter="handset">
+                    <feImage
+                      href="/assets/demos/worm-slider-lens-magnify.png?v=20260930-01"
+                      x="0"
+                      y="0"
+                      width="26"
+                      height="26"
+                      result="magnifying-map"
+                    ></feImage>
+                    <feDisplacementMap
+                      in="SourceGraphic"
+                      in2="magnifying-map"
+                      scale="3.84"
+                      xChannelSelector="R"
+                      yChannelSelector="G"
+                      result="magnified-source"
+                      data-worm-lens-magnification
+                    ></feDisplacementMap>
+                    <feGaussianBlur
+                      in="magnified-source"
+                      stdDeviation="0"
+                      result="blurred-source"
+                    ></feGaussianBlur>
+                    <feImage
+                      href="/assets/demos/worm-slider-lens-bezel.png?v=20260930-01"
+                      x="0"
+                      y="0"
+                      width="26"
+                      height="26"
+                      result="bezel-map"
+                    ></feImage>
+                    <feDisplacementMap
+                      in="blurred-source"
+                      in2="bezel-map"
+                      scale="15.72"
+                      xChannelSelector="R"
+                      yChannelSelector="G"
+                      result="refracted-source"
+                      data-worm-lens-refraction
+                    ></feDisplacementMap>
+                    <feColorMatrix
+                      in="refracted-source"
+                      type="saturate"
+                      values="9"
+                      result="saturated-source"
+                    ></feColorMatrix>
+                    <feImage
+                      href="/assets/demos/worm-slider-lens-specular.png?v=20260930-01"
+                      x="0"
+                      y="0"
+                      width="26"
+                      height="26"
+                      result="specular-layer"
+                    ></feImage>
+                    <feComposite
+                      in="saturated-source"
+                      in2="specular-layer"
+                      operator="in"
+                      result="specular-saturation"
+                    ></feComposite>
+                    <feComponentTransfer in="specular-layer" result="specular-highlight">
+                      <feFuncA type="linear" slope="0.5"></feFuncA>
+                    </feComponentTransfer>
+                    <feBlend
+                      in="specular-saturation"
+                      in2="refracted-source"
+                      mode="normal"
+                      result="refracted-with-saturation"
+                    ></feBlend>
+                    <feBlend
+                      in="specular-highlight"
+                      in2="refracted-with-saturation"
+                      mode="normal"
+                    ></feBlend>
+                  </filter>
+                  <filter id="worm-slider-lens-filter-desktop" color-interpolation-filters="sRGB" data-worm-lens-filter="desktop">
+                    <feImage
+                      href="/assets/demos/worm-slider-lens-magnify.png?v=20260930-01"
+                      x="0"
+                      y="0"
+                      width="52"
+                      height="52"
+                      result="magnifying-map"
+                    ></feImage>
+                    <feDisplacementMap
+                      in="SourceGraphic"
+                      in2="magnifying-map"
+                      scale="7.68"
+                      xChannelSelector="R"
+                      yChannelSelector="G"
+                      result="magnified-source"
+                      data-worm-lens-magnification
+                    ></feDisplacementMap>
+                    <feGaussianBlur
+                      in="magnified-source"
+                      stdDeviation="0"
+                      result="blurred-source"
+                    ></feGaussianBlur>
+                    <feImage
+                      href="/assets/demos/worm-slider-lens-bezel.png?v=20260930-01"
+                      x="0"
+                      y="0"
+                      width="52"
+                      height="52"
+                      result="bezel-map"
+                    ></feImage>
+                    <feDisplacementMap
+                      in="blurred-source"
+                      in2="bezel-map"
+                      scale="31.44"
+                      xChannelSelector="R"
+                      yChannelSelector="G"
+                      result="refracted-source"
+                      data-worm-lens-refraction
+                    ></feDisplacementMap>
+                    <feColorMatrix
+                      in="refracted-source"
+                      type="saturate"
+                      values="9"
+                      result="saturated-source"
+                    ></feColorMatrix>
+                    <feImage
+                      href="/assets/demos/worm-slider-lens-specular.png?v=20260930-01"
+                      x="0"
+                      y="0"
+                      width="52"
+                      height="52"
+                      result="specular-layer"
+                    ></feImage>
+                    <feComposite
+                      in="saturated-source"
+                      in2="specular-layer"
+                      operator="in"
+                      result="specular-saturation"
+                    ></feComposite>
+                    <feComponentTransfer in="specular-layer" result="specular-highlight">
+                      <feFuncA type="linear" slope="0.5"></feFuncA>
+                    </feComponentTransfer>
+                    <feBlend
+                      in="specular-saturation"
+                      in2="refracted-source"
+                      mode="normal"
+                      result="refracted-with-saturation"
+                    ></feBlend>
+                    <feBlend
+                      in="specular-highlight"
+                      in2="refracted-with-saturation"
+                      mode="normal"
+                    ></feBlend>
+                  </filter>
+                </defs>
+              </svg>
+              <input
+                id="worm-comparison-range"
+                type="range"
+                min="0"
+                max="100"
+                value="0"
+                aria-label="Compare the source image with the segmentation"
+              >
+              <span class="comparison-control" aria-hidden="true">
+                <span class="comparison-geometry">
+                  <span class="comparison-line"></span>
+                  <span class="comparison-handle">
+                    <canvas
+                      class="comparison-lens-canvas"
+                      id="worm-comparison-lens"
+                      width="104"
+                      height="104"
+                    ></canvas>
+                    <canvas
+                      class="comparison-lens-webgl"
+                      id="worm-comparison-lens-webgl"
+                      width="104"
+                      height="104"
+                    ></canvas>
+                  </span>
+                  <span class="comparison-bridge"></span>
+                  <span class="comparison-ring"></span>
+                </span>
+              </span>
+            </div>
+            <button class="worm-reset" id="worm-reset" type="button" hidden>Reset</button>
+            <div class="worm-sequence-nav" aria-label="Worm image navigation" hidden>
+              <button id="worm-previous" type="button" aria-label="Previous worm image" disabled>&larr;</button>
+              <span id="worm-sequence-count" aria-live="polite">01 / 06</span>
+              <button id="worm-next" type="button" aria-label="Next worm image" disabled>&rarr;</button>
+            </div>
+            <div class="stage-caption">
+              <span id="stage-number">01</span>
+              <strong id="stage-title">Worm Profiler</strong>
+              <span id="stage-type">ilastik</span>
+            </div>
+          </aside>
+        </div>
+
+        <article class="project-evidence" id="project-evidence" aria-live="polite" data-reveal>
+          <div class="evidence-intro">
+            <p class="evidence-eyebrow" id="evidence-eyebrow">01 / Chimeric planarian analysis / ilastik</p>
+            <h3 id="evidence-title">Following donor tissue through a living planarian chimera.</h3>
+            <p id="evidence-summary">Worm Profiler is an end-to-end imaging pipeline for cross-strain Schmidtea polychroa transplantation experiments. It crops each 26 MP capture to the worm region so Ilastik can process it efficiently, uses pigmentation contrast to separate donor tissue, host tissue, eyes, and background, validates donor masks against hand-drawn ground truth, then measures graft area, position, shape, confidence, and change over time.</p>
+          </div>
+          <dl class="evidence-metrics" id="evidence-metrics" aria-label="Project evidence"></dl>
+          <ol class="evidence-pipeline" id="evidence-pipeline" aria-label="Project pipeline"></ol>
+          <div class="evidence-status" id="evidence-status"></div>
+        </article>
+      </section>
+
+      <section class="about-section" id="about" aria-labelledby="about-title">
+        <div class="about-head" data-reveal>
+          <p class="section-index" id="about-title">02 &mdash; About</p>
+        </div>
+        <div class="about-body">
+          <div class="about-copy" data-reveal>
+            <p>
+              I’m George Onyemenam, a London-based developer working across scientific imaging
+              and computer vision. I build the whole path from model integration and data
+              pipelines to the interface people use, then support it with mobile and cloud systems.
+            </p>
+          </div>
+          <ul class="about-capabilities" data-reveal>
+            <li><span class="cap-index">01</span><span class="cap-name">Segmentation &amp; morphometrics</span></li>
+            <li><span class="cap-index">02</span><span class="cap-name">Detection, tracking &amp; calibration</span></li>
+            <li><span class="cap-index">03</span><span class="cap-name">Product interfaces &amp; mobile apps</span></li>
+            <li><span class="cap-index">04</span><span class="cap-name">Cloud systems &amp; research prototypes</span></li>
+          </ul>
+        </div>
+      </section>
+
+      <section class="contact-section" id="contact" aria-labelledby="contact-title">
+        <p class="section-index" data-reveal>03 &mdash; Contact</p>
+        <h2 id="contact-title" data-reveal>Building a technical team?<br>Let’s talk.</h2>
+        <a class="contact-mail" href="mailto:george.onyemenam@gmail.com" data-magnetic data-reveal>
+          george.onyemenam@gmail.com
+          <span aria-hidden="true">&#8594;</span>
+        </a>
+        <div class="contact-links" data-reveal>
+          <a class="contact-link-with-icon" href="https://github.com/cloutician" target="_blank" rel="noopener noreferrer" aria-label="GitHub profile, opens in a new tab">
+            <img src="/assets/brand/github-mark.svg" width="16" height="16" alt="">
+            <span>GitHub</span>
+          </a>
+          <a class="contact-link-with-icon" href="https://www.linkedin.com/in/georgeonyemenam" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn profile, opens in a new tab">
+            <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAJAAAACQCAMAAADQmBKKAAAAgVBMVEX////w8PD6+vr////////////////////////w8PDz8/P29vb////r6+vv7+/////19fXv7+/////6+vr////////s7Ozy8vLx8fH////////w8PD////z8/P////z8/Ps7Oz////////w8PDy8vLy8vLr6+v////w8PD////v7+//xRVYAAAAKXRSTlMAy2BgPfAIMLC5hHIZzt0aYu5PYSvQ4IaWLD664KfAQrwuG5h0dTMelxtA9VoAAAHRSURBVHhe7dzHjuMwEEXRIk3JiracU7vTRPr/P3DCYhoGS5AxDfDV4t2tFzygZFHalJiKMcZmVREzV1QzGWu+i5B2c1GbFRFUoW7SPOIqtD16isCeJGkWoaUX7RkLqhJQBEcQQf8bQQQR1A9LETkNvQ1Qf/onPu8NgA535gMcNMh9Axh0SNRfoKBe0vZI0FnSzkBQL1p7HOiraH3DgU6i9R0HEj27IIKWovUDBxpEy+NAr6JV40DxXdK6CARdJK1GguJGuYNQIF3kIwqki9oIB8XLx9Oocza+Oi6bP6Y3X/O7bCKCCCLINeuXpYhsQ2iuCzTI+VLuKr37PGjiBXb8VxdEqatBoFWQkcINAbqWMlq5yA/ykpSIsoESjyJa5QV5mWqbFdTKdE1GUC0PVN7ygTp5pGMe0ON11kCysAZqrYG21kBiDuRyg9Y//y7p2lLUjnlB4eO4unnRarKA9NVUUcgD0v/TWxxIX6uWtC4TSH8Kl5KWD7SOSWsoqE5BDRQU0xwSFKyBWjxo+kxYIUFu6hwniKApr1kQQQQRRBBBBBFEEEEEEUQQQQQRRBA0ggj6fAQRRBBBFdZTGR8igR+zYXwQCX5Ui+1hNvhxP5ZijLFfxY6RChslhZ0AAAAASUVORK5CYII=" width="16" height="16" alt="">
+            <span>LinkedIn</span>
+          </a>
+          <a class="contact-link-with-icon" href="mailto:george.onyemenam@gmail.com?subject=CV%20request%20%E2%80%94%20George%20Onyemenam">
+            <span class="contact-mail-mark" aria-hidden="true"></span>
+            <span>Request CV</span>
+          </a>
+          <a class="contact-link-with-icon" href="https://www.goodreads.com/george_ony" target="_blank" rel="noopener noreferrer" aria-label="Goodreads profile, opens in a new tab">
+            <img class="goodreads-icon" src="/assets/brand/goodreads-official.svg" width="16" height="16" alt="">
+            <span>Goodreads</span>
+          </a>
+        </div>
+      </section>
+
+    </main>
+
+    <footer class="site-footer">
+      <div class="footer-brand">
+        <strong>George Onyemenam</strong>
+        <span>ML engineer / software developer / London</span>
+      </div>
+      <span class="footer-note">Portfolio / 2026</span>
+      <a class="footer-top" href="#top" data-magnetic>Back to top <span aria-hidden="true">&#8593;</span></a>
+    </footer>
+  </body>
+</html>

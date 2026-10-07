@@ -1,0 +1,10 @@
+node_modules/
+dist/
+.openai/
+.wrangler/
+.dev.vars*
+*.tgz
+*.local.md
+source-assets/
+public/assets/demos/touchline/frames/
+tmp/
