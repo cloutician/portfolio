@@ -96,7 +96,7 @@ More implementation detail is available in [docs/ARCHITECTURE.md](docs/ARCHITECT
 
 ```bash
 git clone https://github.com/cloutician/portfolio
-cd <REPOSITORY-DIRECTORY>
+cd portfolio
 npm install
 npm run dev
 ```
