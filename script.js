@@ -10,7 +10,7 @@ const projects = [
     scene: 0,
     interactive: "worm",
     desc: "Tracks donor tissue through chimeric planarians, turning longitudinal images into reproducible segmentation and morphometric measurements.",
-    tags: ["Bioimaging", "Segmentation", "Image analysis"],
+    tags: ["Bioimaging", "Segmentation", "Microscopy"],
     evidence: {
       eyebrow: "01 / Chimeric planarian analysis / ilastik",
       title: "Following donor tissue through a living planarian chimera.",
@@ -201,6 +201,15 @@ let heroPointerInside = false;
 let heroPointerPresence = 0.16;
 let heroPrecisionPointer = false;
 let heroIsVisible = true;
+let projectIsVisible = true;
+let ambientAnimationFrame = 0;
+let viewportUpdateFrame = 0;
+let viewportUpdateFlags = 0;
+let activeNavLinks = [];
+let activeNavSections = [];
+let wormLensLayoutVersion = 0;
+let wormLensGeometryDynamicUntil = 0;
+const wormLensStageGeometry = new WeakMap();
 let stagePointer = { x: 0.5, y: 0.5 };
 let wormReadyTimer = 0;
 let wormRasterTimer = 0;
@@ -238,6 +247,8 @@ let touchlinePlaybackFrame = 0;
 let touchlinePlaybackPending = false;
 let touchlinePlaybackStartedAt = 0;
 let touchlinePlaybackStartedOnFrame = 1;
+let touchlinePlaybackRunning = false;
+let touchlinePlaybackElapsed = 0;
 let touchlineScrubPointerId = null;
 let touchlineScrubFrame = 0;
 let touchlineScrubClientX = 0;
@@ -336,8 +347,7 @@ function settleWithin(promise, timeout) {
 async function registerStreamlineWorker() {
   if (!("serviceWorker" in navigator)) return;
 
-  const isLocalDevelopment = location.hostname === "localhost"
-    || location.hostname === "127.0.0.1";
+  const isLocalDevelopment = import.meta.env.DEV;
 
   if (isLocalDevelopment) {
     const registrations = await navigator.serviceWorker.getRegistrations();
@@ -355,7 +365,7 @@ async function registerStreamlineWorker() {
   }
 
   const registration = await navigator.serviceWorker.register(
-    "/streamline-sw.js?v=20260925-02",
+    "/streamline-sw.js",
     { scope: "/", updateViaCache: "none" },
   );
   await settleWithin(navigator.serviceWorker.ready, 4000);
@@ -623,6 +633,7 @@ function waitForWormTrack(track) {
 }
 
 function applyWormFrameToStage(stage, index, assets) {
+  wormLensStageGeometry.delete(stage);
   const image = wormImages[index];
   const { crop, zoomCrop } = image;
   const media = stage.querySelector(".worm-media");
@@ -665,6 +676,7 @@ function commitWormZoomSource(source, stage, media, index) {
   }
   wormZoomOpacityCache.delete(stage);
   stage.classList.add("is-zoom-raster-ready");
+  invalidateWormLensGeometry(600);
   void prepareWormLensStagesForWebGL([stage], { allowHidden: true });
   requestWormLensRender(180);
 }
@@ -736,6 +748,7 @@ function commitWormImage(index, assets) {
 }
 
 async function prepareWormImageSet(initialIndexes = [0]) {
+  hydrateWormLensMaps();
   setWormNavigationBusy(true);
   wormStage.setAttribute("aria-busy", "true");
 
@@ -1069,8 +1082,48 @@ function stopTouchlinePlayback() {
   cancelAnimationFrame(touchlinePlaybackFrame);
   touchlinePlaybackFrame = 0;
   touchlinePlaybackPending = false;
+  touchlinePlaybackRunning = false;
+  touchlinePlaybackElapsed = 0;
   touchlinePlay.dataset.state = "play";
   touchlinePlay.setAttribute("aria-label", "Play Touchline demo");
+}
+
+function suspendTouchlinePlayback() {
+  if (!touchlinePlaybackFrame) return;
+  touchlinePlaybackElapsed = performance.now() - touchlinePlaybackStartedAt;
+  cancelAnimationFrame(touchlinePlaybackFrame);
+  touchlinePlaybackFrame = 0;
+}
+
+function advanceTouchlinePlayback(now) {
+  touchlinePlaybackFrame = 0;
+  if (!touchlinePlaybackRunning || !projectIsVisible || document.hidden) {
+    if (touchlinePlaybackRunning) touchlinePlaybackElapsed = now - touchlinePlaybackStartedAt;
+    return;
+  }
+  const sourceFrame = touchlinePlaybackStartedOnFrame
+    + ((now - touchlinePlaybackStartedAt) / 1000) * touchlinePreview.media.frame_rate;
+  const targetIndex = Math.min(
+    touchlinePreview.frames.length - 1,
+    Math.floor((sourceFrame - 1) / touchlinePreview.media.sample_stride),
+  );
+  if (targetIndex !== touchlineRequestedFrameIndex) {
+    renderTouchlineFrame(targetIndex);
+    preloadTouchlineFrames(targetIndex);
+  }
+  if (sourceFrame >= touchlinePreview.media.frame_count) {
+    renderTouchlineFrame(touchlinePreview.frames.length - 1);
+    stopTouchlinePlayback();
+    return;
+  }
+  touchlinePlaybackFrame = requestAnimationFrame(advanceTouchlinePlayback);
+}
+
+function resumeTouchlinePlayback() {
+  if (!touchlinePlaybackRunning || touchlinePlaybackFrame
+      || !projectIsVisible || document.hidden || touchlineStage.hidden) return;
+  touchlinePlaybackStartedAt = performance.now() - touchlinePlaybackElapsed;
+  touchlinePlaybackFrame = requestAnimationFrame(advanceTouchlinePlayback);
 }
 
 function scrubTouchlineFromPointer(clientX) {
@@ -1090,7 +1143,7 @@ function queueTouchlineScrub(clientX) {
 }
 
 function toggleTouchlinePlayback() {
-  if (touchlinePlaybackFrame || touchlinePlaybackPending) {
+  if (touchlinePlaybackRunning || touchlinePlaybackPending) {
     stopTouchlinePlayback();
     return;
   }
@@ -1104,27 +1157,11 @@ function toggleTouchlinePlayback() {
     touchlinePlaybackPending = false;
     touchlinePlaybackStartedAt = performance.now();
     touchlinePlaybackStartedOnFrame = touchlinePreview.frames[touchlineRequestedFrameIndex].frame;
+    touchlinePlaybackRunning = true;
+    touchlinePlaybackElapsed = 0;
     touchlinePlay.dataset.state = "pause";
     touchlinePlay.setAttribute("aria-label", "Pause Touchline demo");
-    const advance = (now) => {
-      const elapsedSeconds = (now - touchlinePlaybackStartedAt) / 1000;
-      const sourceFrame = touchlinePlaybackStartedOnFrame + elapsedSeconds * touchlinePreview.media.frame_rate;
-      const targetIndex = Math.min(
-        touchlinePreview.frames.length - 1,
-        Math.floor((sourceFrame - 1) / touchlinePreview.media.sample_stride),
-      );
-      if (targetIndex !== touchlineRequestedFrameIndex) {
-        renderTouchlineFrame(targetIndex);
-        preloadTouchlineFrames(targetIndex);
-      }
-      if (sourceFrame >= touchlinePreview.media.frame_count) {
-        renderTouchlineFrame(touchlinePreview.frames.length - 1);
-        stopTouchlinePlayback();
-        return;
-      }
-      touchlinePlaybackFrame = requestAnimationFrame(advance);
-    };
-    touchlinePlaybackFrame = requestAnimationFrame(advance);
+    resumeTouchlinePlayback();
   }).catch(() => stopTouchlinePlayback());
 }
 
@@ -1141,7 +1178,7 @@ function resizeOiiiaCatViewer() {
 }
 
 function renderOiiiaCat(time) {
-  if (!oiiaCatViewer || projectPlaceholder.hidden) {
+  if (!oiiaCatViewer || projectPlaceholder.hidden || !projectIsVisible || document.hidden) {
     oiiaCatAnimationFrame = 0;
     oiiaCatPreviousTime = 0;
     return;
@@ -1194,7 +1231,9 @@ function startOiiiaCatViewer() {
   if (oiiaCatViewer) {
     restoreOiiiaCatView({ restartAnimation: true });
     resizeOiiiaCatViewer();
-    if (!oiiaCatAnimationFrame) oiiaCatAnimationFrame = requestAnimationFrame(renderOiiiaCat);
+    if (projectIsVisible && !document.hidden && !oiiaCatAnimationFrame) {
+      oiiaCatAnimationFrame = requestAnimationFrame(renderOiiiaCat);
+    }
     return Promise.resolve(oiiaCatViewer);
   }
 
@@ -1294,7 +1333,7 @@ function startOiiiaCatViewer() {
         projectPlaceholder.classList.remove("is-loading");
         projectPlaceholder.classList.add("is-ready");
         oiiaCatLoading.hidden = true;
-        if (!projectPlaceholder.hidden && !oiiaCatAnimationFrame) {
+        if (!projectPlaceholder.hidden && projectIsVisible && !document.hidden && !oiiaCatAnimationFrame) {
           oiiaCatAnimationFrame = requestAnimationFrame(renderOiiiaCat);
         }
         resolve(oiiaCatViewer);
@@ -1317,6 +1356,34 @@ function stopOiiiaCatViewer() {
   cancelAnimationFrame(oiiaCatAnimationFrame);
   oiiaCatAnimationFrame = 0;
   oiiaCatPreviousTime = 0;
+}
+
+function syncProjectActivity() {
+  const visible = projectIsVisible && !document.hidden;
+  if (!visible) {
+    stopOiiiaCatViewer();
+    suspendTouchlinePlayback();
+    cancelAnimationFrame(wormLensRenderAnimationFrame);
+    wormLensRenderAnimationFrame = 0;
+    wormLensRenderUntil = 0;
+  } else {
+    if (!projectPlaceholder.hidden && oiiaCatViewer && !oiiaCatAnimationFrame) {
+      oiiaCatPreviousTime = 0;
+      oiiaCatAnimationFrame = requestAnimationFrame(renderOiiiaCat);
+    }
+    resumeTouchlinePlayback();
+    if (!wormStage.hidden) {
+      ensureWormReady().then(() => prewarmWormLensFrame(activeWormImage))
+        .catch((error) => console.warn(error));
+    }
+    requestWormLensRender();
+  }
+  projectStage.getAnimations({ subtree: true }).forEach((animation) => {
+    if (animation.id !== "worm-roi-motion") return;
+    if (visible) animation.play();
+    else animation.pause();
+  });
+  requestAmbientRender();
 }
 
 oiiaCatReset.addEventListener("click", () => {
@@ -1483,12 +1550,15 @@ function syncProjectDescriptionHeights() {
   const rootFontSize = Number.parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
   const openPadding = rootFontSize * 0.38;
 
-  projectIndex.querySelectorAll(".project-desc").forEach((description) => {
+  const measurements = [...projectIndex.querySelectorAll(".project-desc")].map((description) => {
     const currentPadding = Number.parseFloat(getComputedStyle(description).paddingTop) || 0;
     const contentHeight = Math.max(0, description.scrollHeight - currentPadding);
+    return { description, height: Math.ceil(contentHeight + openPadding) };
+  });
+  measurements.forEach(({ description, height }) => {
     description.style.setProperty(
       "--project-desc-height",
-      `${Math.ceil(contentHeight + openPadding)}px`,
+      `${height}px`,
     );
   });
 }
@@ -1586,6 +1656,7 @@ function setActiveProject(index, { userInitiated = false, updateHistory = false 
 
 function computeWormGeometry() {
   if (wormStage.hidden) return;
+  invalidateWormLensGeometry();
 
   const wormCrop = wormImages[activeWormImage].crop;
 
@@ -1670,14 +1741,52 @@ function getWormZoomOpacity(stage, zoomSource) {
   return opacity;
 }
 
+function invalidateWormLensGeometry(dynamicFor = 0) {
+  wormLensLayoutVersion += 1;
+  wormLensGeometryDynamicUntil = Math.max(
+    wormLensGeometryDynamicUntil,
+    performance.now() + dynamicFor,
+  );
+}
+
+function getWormLensStageGeometry(stage, stageRect) {
+  let cached = wormLensStageGeometry.get(stage);
+  const moving = isWormSwitching || stage.classList.contains("is-resetting")
+    || performance.now() < wormLensGeometryDynamicUntil;
+  if (!cached || cached.version !== wormLensLayoutVersion || moving || cached.moving
+      || cached.width !== stageRect.width || cached.height !== stageRect.height) {
+    const source = stage.querySelector(".worm-source");
+    const zoomSource = stage.querySelector(".worm-zoom-source");
+    const relativeRect = (image) => {
+      if (!image) return null;
+      const rect = image.getBoundingClientRect();
+      return { left: rect.left - stageRect.left, top: rect.top - stageRect.top,
+        width: rect.width, height: rect.height };
+    };
+    cached = {
+      version: wormLensLayoutVersion, moving, width: stageRect.width, height: stageRect.height,
+      source, zoomSource, sourceRect: relativeRect(source), zoomRect: relativeRect(zoomSource),
+      zoomOpacity: getWormZoomOpacity(stage, zoomSource),
+    };
+    wormLensStageGeometry.set(stage, cached);
+  }
+  const viewportRect = (rect) => rect && ({
+    left: stageRect.left + rect.left, top: stageRect.top + rect.top,
+    width: rect.width, height: rect.height,
+    right: stageRect.left + rect.left + rect.width,
+    bottom: stageRect.top + rect.top + rect.height,
+  });
+  return { ...cached, sourceRect: viewportRect(cached.sourceRect), zoomRect: viewportRect(cached.zoomRect) };
+}
+
 function getWormStageLensLayers(stage, sampleRect) {
   const stageRect = stage.getBoundingClientRect();
   if (!stageRect.width || !stageRect.height || !wormLensRectIntersects(stageRect, sampleRect)) return [];
 
-  const source = stage.querySelector(".worm-source");
-  const zoomSource = stage.querySelector(".worm-zoom-source");
-  const zoomOpacity = getWormZoomOpacity(stage, zoomSource);
-  const zoomRect = zoomOpacity > 0 ? zoomSource.getBoundingClientRect() : null;
+  // Stable image geometry is relative to the stage, so scrolling (including
+  // a sticky stage) only needs the stage's current viewport position. During
+  // zooms/swipes we keep measuring the actual interpolated image transforms.
+  const { source, zoomSource, zoomOpacity, sourceRect, zoomRect } = getWormLensStageGeometry(stage, stageRect);
   const zoomCoversSample = zoomRect
     && zoomRect.left <= sampleRect.left
     && zoomRect.top <= sampleRect.top
@@ -1686,7 +1795,7 @@ function getWormStageLensLayers(stage, sampleRect) {
 
   const layers = [];
   if (!zoomCoversSample || zoomOpacity < 0.995) {
-    const sourceLayer = getWormLensImageLayer(source, sampleRect);
+    const sourceLayer = getWormLensImageLayer(source, sampleRect, 1, sourceRect);
     if (sourceLayer) layers.push(sourceLayer);
   }
   if (zoomSource && zoomOpacity > 0) {
@@ -1742,7 +1851,14 @@ function drawWormLensLayers(context, layers, sampleRect) {
   context.globalAlpha = 1;
 }
 
+function hydrateWormLensMaps() {
+  document.querySelectorAll("feImage[data-lens-src]:not([href])").forEach((image) => {
+    image.setAttribute("href", image.dataset.lensSrc);
+  });
+}
+
 function ensureWormLensWebGLRenderer() {
+  hydrateWormLensMaps();
   if (wormLensWebGLAttempted) return wormLensWebGLRenderer;
   wormLensWebGLAttempted = true;
   try {
@@ -1889,7 +2005,7 @@ function renderWormLensView() {
 
 function runWormLensRender(time) {
   wormLensRenderAnimationFrame = 0;
-  if (wormLensScrollSuspended) return;
+  if (wormLensScrollSuspended || !projectIsVisible || document.hidden) return;
   renderWormLensView();
   if (time < wormLensRenderUntil) {
     wormLensRenderAnimationFrame = requestAnimationFrame(runWormLensRender);
@@ -1897,7 +2013,7 @@ function runWormLensRender(time) {
 }
 
 function requestWormLensRender(duration = 0) {
-  if (wormLensScrollSuspended) return;
+  if (wormLensScrollSuspended || !projectIsVisible || document.hidden) return;
   wormLensRenderUntil = Math.max(wormLensRenderUntil, performance.now() + duration);
   if (!wormLensRenderAnimationFrame) {
     wormLensRenderAnimationFrame = requestAnimationFrame(runWormLensRender);
@@ -2041,6 +2157,7 @@ function settleWormComparison() {
 
 function zoomWormView() {
   if (wormStage.classList.contains("is-zoomed")) return;
+  invalidateWormLensGeometry(1600);
   ensureWormReady().catch((error) => console.warn(error));
 
   const zoomStage = wormStage;
@@ -2075,6 +2192,7 @@ function zoomWormView() {
 }
 
 function resetWormView({ waitForZoom = false } = {}) {
+  invalidateWormLensGeometry(1200);
   clearTimeout(wormReadyTimer);
   clearTimeout(wormRasterTimer);
   clearTimeout(wormResetTimer);
@@ -2632,10 +2750,24 @@ function drawReplay() {
 }
 
 function animate(time) {
+  ambientAnimationFrame = 0;
+  if (document.hidden) return;
   if (heroIsVisible || reducedMotion) drawHero(time);
-  drawProjectScene(time);
-  drawReplay();
-  if (!reducedMotion) requestAnimationFrame(animate);
+  if (projectIsVisible) {
+    drawProjectScene(time);
+    drawReplay();
+  }
+  if (!reducedMotion && (heroIsVisible
+      || (projectIsVisible && (!projectCanvas.hidden || (replayStage && !replayStage.closest("[hidden]")))))) {
+    requestAmbientRender();
+  }
+}
+
+function requestAmbientRender() {
+  if (!ambientAnimationFrame && !document.hidden
+      && (heroIsVisible || projectIsVisible)) {
+    ambientAnimationFrame = requestAnimationFrame(animate);
+  }
 }
 
 function pointerPosition(event, element) {
@@ -2648,14 +2780,45 @@ function pointerPosition(event, element) {
 
 const scrollProgress = document.querySelector("#scroll-progress");
 
-function updateHeader() {
-  header.classList.toggle("is-scrolled", window.scrollY > 24);
+function updateHeader(scrollY = window.scrollY, scrollable = document.documentElement.scrollHeight - window.innerHeight) {
+  header.classList.toggle("is-scrolled", scrollY > 24);
 
   if (scrollProgress) {
-    const scrollable = document.documentElement.scrollHeight - window.innerHeight;
-    const ratio = scrollable > 0 ? window.scrollY / scrollable : 0;
-    scrollProgress.style.width = `${Math.max(0, Math.min(1, ratio)) * 100}%`;
+    const ratio = scrollable > 0 ? scrollY / scrollable : 0;
+    scrollProgress.style.transform = `scaleX(${Math.max(0, Math.min(1, ratio))})`;
   }
+}
+
+function queueViewportUpdate(flags = 1) {
+  viewportUpdateFlags |= flags;
+  if (viewportUpdateFrame) return;
+  viewportUpdateFrame = requestAnimationFrame(() => {
+    viewportUpdateFrame = 0;
+    const pending = viewportUpdateFlags;
+    viewportUpdateFlags = 0;
+    const scrollY = window.scrollY;
+    const scrollable = document.documentElement.scrollHeight - window.innerHeight;
+    const marker = Math.min(180, Math.max(96, window.innerHeight * 0.22));
+    const activeSection = activeNavSections.find((section) => {
+      const bounds = section.getBoundingClientRect();
+      return bounds.top <= marker && bounds.bottom > marker;
+    });
+
+    // Read section geometry before changing the header or active link styles.
+    updateHeader(scrollY, scrollable);
+    activeNavLinks.forEach((link) =>
+      link.classList.toggle("is-active", link.dataset.nav === activeSection?.id),
+    );
+    if (pending & 1) suspendWormLensForScroll();
+    if (pending & 2) {
+      invalidateWormLensGeometry(80);
+      syncProjectDescriptionHeights();
+      syncMetricNotePointers();
+      if (wormStage.classList.contains("is-zoomed")) computeWormGeometry();
+      else requestWormLensRender();
+      if (reducedMotion) requestAmbientRender();
+    }
+  });
 }
 
 function initScrollReveal() {
@@ -2689,36 +2852,11 @@ function initScrollReveal() {
 }
 
 function initActiveNav() {
-  const navLinks = [...document.querySelectorAll("[data-nav]")];
-  const sections = navLinks
+  activeNavLinks = [...document.querySelectorAll("[data-nav]")];
+  activeNavSections = activeNavLinks
     .map((link) => document.querySelector(`#${link.dataset.nav}`))
     .filter(Boolean);
-  if (!sections.length) return;
-
-  let updateQueued = false;
-
-  const updateActiveNav = () => {
-    updateQueued = false;
-    const marker = Math.min(180, Math.max(96, window.innerHeight * 0.22));
-    const activeSection = sections.find((section) => {
-      const bounds = section.getBoundingClientRect();
-      return bounds.top <= marker && bounds.bottom > marker;
-    });
-
-    navLinks.forEach((link) =>
-      link.classList.toggle("is-active", link.dataset.nav === activeSection?.id),
-    );
-  };
-
-  const queueActiveNavUpdate = () => {
-    if (updateQueued) return;
-    updateQueued = true;
-    window.requestAnimationFrame(updateActiveNav);
-  };
-
-  window.addEventListener("scroll", queueActiveNavUpdate, { passive: true });
-  window.addEventListener("resize", queueActiveNavUpdate);
-  updateActiveNav();
+  queueViewportUpdate(0);
 }
 
 const finePointer =
@@ -2862,27 +3000,30 @@ initActiveNav();
 initMagnetic();
 initScramble();
 
-requestAnimationFrame(() => {
-  document.body.classList.remove("is-loading");
-  document.body.classList.add("is-loaded");
-  animate(0);
+const heroPainted = new Promise((resolve) => {
+  const afterPaint = () => requestAnimationFrame(() => requestAnimationFrame(resolve));
+  if (document.body.classList.contains("is-loaded")) afterPaint();
+  else window.addEventListener("portfolio:hero-ready", afterPaint, { once: true });
 });
+heroPainted.then(requestAmbientRender);
 
 const warmWormWhenApproached = () => {
   const warm = () => {
-    ensureWormLensWebGLRenderer();
     ensureWormReady()
-      .then(() => prewarmWormLensFrame(activeWormImage))
+      .then(() => projectIsVisible ? prewarmWormLensFrame(activeWormImage) : undefined)
       .catch((error) => console.warn(error));
   };
 
-  if ("requestIdleCallback" in window) {
-    window.requestIdleCallback(warm, { timeout: 600 });
-  } else {
-    window.setTimeout(warm, 0);
-  }
+  // The first project can be prepared ahead of scrolling without competing
+  // with the opening font and first hero paint. Clicking a demo bypasses this.
+  heroPainted.then(() => document.fonts?.ready).then(() => {
+    if ("requestIdleCallback" in window) {
+      window.requestIdleCallback(warm, { timeout: 1200 });
+    } else {
+      window.setTimeout(warm, 0);
+    }
+  });
 };
-const workSection = document.querySelector("#work");
 if ("IntersectionObserver" in window) {
   const wormWarmObserver = new IntersectionObserver(
     ([entry], observer) => {
@@ -2890,32 +3031,40 @@ if ("IntersectionObserver" in window) {
       warmWormWhenApproached();
       observer.disconnect();
     },
-    { rootMargin: "500px 0px" },
+    { rootMargin: "250px 0px" },
   );
-  wormWarmObserver.observe(workSection);
+  wormWarmObserver.observe(projectStage);
 } else {
   window.setTimeout(warmWormWhenApproached, 1200);
 }
 
 const registerWorkerWhenIdle = () => registerStreamlineWorker().catch((error) => console.warn(error));
-if ("requestIdleCallback" in window) {
-  window.requestIdleCallback(registerWorkerWhenIdle, { timeout: 3000 });
-} else {
-  window.setTimeout(registerWorkerWhenIdle, 1200);
-}
+heroPainted.then(() => {
+  if ("requestIdleCallback" in window) {
+    window.requestIdleCallback(registerWorkerWhenIdle, { timeout: 3000 });
+  } else {
+    window.setTimeout(registerWorkerWhenIdle, 1200);
+  }
+});
 
 if ("IntersectionObserver" in window) {
   const heroVisibilityObserver = new IntersectionObserver(
     ([entry]) => {
       heroIsVisible = entry.isIntersecting;
+      if (heroIsVisible) requestAmbientRender();
     },
     { rootMargin: "12% 0px" },
   );
   heroVisibilityObserver.observe(hero);
+
+  const projectVisibilityObserver = new IntersectionObserver(([entry]) => {
+    projectIsVisible = entry.isIntersecting;
+    syncProjectActivity();
+  });
+  projectVisibilityObserver.observe(projectStage);
 }
 
-window.addEventListener("scroll", updateHeader, { passive: true });
-window.addEventListener("scroll", suspendWormLensForScroll, { passive: true });
+window.addEventListener("scroll", () => queueViewportUpdate(1), { passive: true });
 if ("onscrollend" in window) {
   window.addEventListener("scrollend", resumeWormLensAfterScroll, { passive: true });
 }
@@ -2923,17 +3072,21 @@ window.addEventListener("popstate", () => {
   const index = projectIndexFromHash();
   setActiveProject(index >= 0 ? index : 0);
 });
-window.addEventListener("resize", () => {
-  syncProjectDescriptionHeights();
-  syncMetricNotePointers();
-  if (wormStage.classList.contains("is-zoomed")) computeWormGeometry();
-  else requestWormLensRender();
-  if (reducedMotion) animate(0);
+window.addEventListener("resize", () => queueViewportUpdate(2));
+window.addEventListener("pageshow", () => {
+  queueViewportUpdate(0);
+  syncProjectActivity();
 });
-window.addEventListener("pageshow", () => requestWormLensRender());
 document.addEventListener("visibilitychange", () => {
-  if (document.visibilityState === "visible") requestWormLensRender();
+  if (document.hidden) {
+    cancelAnimationFrame(ambientAnimationFrame);
+    ambientAnimationFrame = 0;
+  }
+  syncProjectActivity();
 });
+
+new ResizeObserver(() => queueViewportUpdate(0)).observe(document.body);
+document.fonts?.ready.then(() => queueViewportUpdate(2));
 
 hero.addEventListener("pointerenter", (event) => {
   if (event.pointerType === "touch") return;

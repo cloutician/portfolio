@@ -20,13 +20,9 @@
     <link rel="icon" type="image/png" sizes="64x64" href="/assets/brand/site-mark-64.png">
     <link rel="apple-touch-icon" sizes="180x180" href="/assets/brand/site-mark-180.png">
     <title>George Onyemenam | ML Engineer &amp; Software Developer</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="preload" as="image" type="image/png" fetchpriority="low" href="/assets/demos/worm-slider-lens-magnify.png?v=20260930-01">
-    <link rel="preload" as="image" type="image/png" fetchpriority="low" href="/assets/demos/worm-slider-lens-bezel.png?v=20260930-01">
-    <link rel="preload" as="image" type="image/png" fetchpriority="low" href="/assets/demos/worm-slider-lens-specular.png?v=20260930-01">
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap">
+    <link rel="preload" as="font" type="font/woff2" crossorigin href="/assets/fonts/space-grotesk-latin.woff2">
     <link rel="stylesheet" href="/styles.css?v=20261001-01">
+    <script defer src="/hero-intro.js"></script>
     <script type="module" src="/script.js?v=20260930-22"></script>
   </head>
   <body class="is-loading">
@@ -39,6 +35,7 @@
       <nav class="site-nav" aria-label="Primary navigation">
         <a href="#work-heading" data-nav="work">Work</a>
         <a href="#about" data-nav="about">About</a>
+        <a href="#toolkit" data-nav="toolkit">Toolkit</a>
         <a href="#contact" data-nav="contact">Contact</a>
       </nav>
       <span class="header-note"><i aria-hidden="true"></i> Available for work</span>
@@ -125,7 +122,7 @@
                 <div class="tl-lite-viewport">
                   <div class="tl-lite-media">
                     <div class="tl-lite-frame-layer is-current" data-touchline-frame-layer>
-                      <img src="/assets/demos/touchline/frames/000396.webp" alt="SoccerNet football frame with Touchline player tracking overlay">
+                      <img src="/assets/demos/touchline/frames/000396.webp" loading="lazy" fetchpriority="low" alt="SoccerNet football frame with Touchline player tracking overlay">
                       <div class="tl-lite-tracks" aria-hidden="true"></div>
                     </div>
                     <div class="tl-lite-frame-layer" data-touchline-frame-layer aria-hidden="true">
@@ -244,7 +241,7 @@
                 <defs>
                   <filter id="worm-slider-lens-filter" color-interpolation-filters="sRGB" data-worm-lens-filter="handset">
                     <feImage
-                      href="/assets/demos/worm-slider-lens-magnify.png?v=20260930-01"
+                      data-lens-src="/assets/demos/worm-slider-lens-magnify.png?v=20260930-01"
                       x="0"
                       y="0"
                       width="26"
@@ -266,7 +263,7 @@
                       result="blurred-source"
                     ></feGaussianBlur>
                     <feImage
-                      href="/assets/demos/worm-slider-lens-bezel.png?v=20260930-01"
+                      data-lens-src="/assets/demos/worm-slider-lens-bezel.png?v=20260930-01"
                       x="0"
                       y="0"
                       width="26"
@@ -289,7 +286,7 @@
                       result="saturated-source"
                     ></feColorMatrix>
                     <feImage
-                      href="/assets/demos/worm-slider-lens-specular.png?v=20260930-01"
+                      data-lens-src="/assets/demos/worm-slider-lens-specular.png?v=20260930-01"
                       x="0"
                       y="0"
                       width="26"
@@ -319,7 +316,7 @@
                   </filter>
                   <filter id="worm-slider-lens-filter-desktop" color-interpolation-filters="sRGB" data-worm-lens-filter="desktop">
                     <feImage
-                      href="/assets/demos/worm-slider-lens-magnify.png?v=20260930-01"
+                      data-lens-src="/assets/demos/worm-slider-lens-magnify.png?v=20260930-01"
                       x="0"
                       y="0"
                       width="52"
@@ -341,7 +338,7 @@
                       result="blurred-source"
                     ></feGaussianBlur>
                     <feImage
-                      href="/assets/demos/worm-slider-lens-bezel.png?v=20260930-01"
+                      data-lens-src="/assets/demos/worm-slider-lens-bezel.png?v=20260930-01"
                       x="0"
                       y="0"
                       width="52"
@@ -364,7 +361,7 @@
                       result="saturated-source"
                     ></feColorMatrix>
                     <feImage
-                      href="/assets/demos/worm-slider-lens-specular.png?v=20260930-01"
+                      data-lens-src="/assets/demos/worm-slider-lens-specular.png?v=20260930-01"
                       x="0"
                       y="0"
                       width="52"
@@ -471,8 +468,91 @@
         </div>
       </section>
 
+      <section class="toolkit-section" id="toolkit" aria-labelledby="toolkit-title">
+        <div class="toolkit-heading" data-reveal>
+          <div>
+            <p class="section-index">03 &mdash; Toolkit</p>
+            <h2 id="toolkit-title">Languages &amp; tools.</h2>
+          </div>
+          <a class="toolkit-profile-link" href="https://github.com/cloutician" target="_blank" rel="noopener noreferrer" aria-label="View my GitHub profile (opens in a new tab)">
+            <img src="/assets/brand/github-mark.svg" width="18" height="18" alt="">
+            <span>On GitHub</span>
+          </a>
+        </div>
+        <div class="toolkit-grid">
+          <article class="toolkit-group" data-reveal>
+            <h3><span aria-hidden="true">01</span> Languages</h3>
+            <ul class="toolkit-tools" aria-label="Programming languages">
+              <li><img src="/assets/toolkit/cplusplus.svg" width="22" height="22" loading="lazy" alt="">C++</li>
+              <li><img src="/assets/toolkit/python.svg" width="22" height="22" loading="lazy" alt="">Python</li>
+              <li><img src="/assets/toolkit/kotlin.svg" width="22" height="22" loading="lazy" alt="">Kotlin</li>
+              <li><img src="/assets/toolkit/typescript.svg" width="22" height="22" loading="lazy" alt="">TypeScript</li>
+              <li><img src="/assets/toolkit/java.svg" width="22" height="22" loading="lazy" alt="">Java</li>
+              <li><img src="/assets/toolkit/javascript.svg" width="22" height="22" loading="lazy" alt="">JavaScript</li>
+              <li><img src="/assets/toolkit/sql.svg" width="22" height="22" loading="lazy" alt="">SQL</li>
+            </ul>
+          </article>
+          <article class="toolkit-group" data-reveal>
+            <h3><span aria-hidden="true">02</span> Machine learning &amp; vision</h3>
+            <ul class="toolkit-tools" aria-label="Machine learning and computer vision">
+              <li><img src="/assets/toolkit/pytorch.svg" width="22" height="22" loading="lazy" alt="">PyTorch</li>
+              <li><img src="/assets/toolkit/tensorflow.svg" width="22" height="22" loading="lazy" alt="">TensorFlow</li>
+              <li><img src="/assets/toolkit/scikit-learn.svg" width="22" height="22" loading="lazy" alt="">scikit-learn</li>
+              <li><img src="/assets/toolkit/opencv.svg" width="22" height="22" loading="lazy" alt="">OpenCV</li>
+              <li><img src="/assets/toolkit/onnx.svg" width="22" height="22" loading="lazy" alt="">ONNX Runtime</li>
+              <li><img src="/assets/toolkit/cuda.svg" width="22" height="22" loading="lazy" alt="">CUDA</li>
+            </ul>
+          </article>
+          <article class="toolkit-group" data-reveal>
+            <h3><span aria-hidden="true">03</span> Applications &amp; interfaces</h3>
+            <ul class="toolkit-tools" aria-label="Application development">
+              <li><img src="/assets/toolkit/qt.svg" width="22" height="22" loading="lazy" alt="">Qt</li>
+              <li><img src="/assets/toolkit/android.svg" width="22" height="22" loading="lazy" alt="">Android</li>
+              <li><img src="/assets/toolkit/jetpack-compose.svg" width="22" height="22" loading="lazy" alt="">Jetpack Compose</li>
+              <li><img src="/assets/toolkit/react.svg" width="22" height="22" loading="lazy" alt="">React</li>
+              <li><img src="/assets/toolkit/nodejs.svg" width="22" height="22" loading="lazy" alt="">Node.js</li>
+            </ul>
+          </article>
+          <article class="toolkit-group" data-reveal>
+            <h3><span aria-hidden="true">04</span> Data &amp; scientific imaging</h3>
+            <ul class="toolkit-tools" aria-label="Data and scientific imaging software">
+              <li><img src="/assets/toolkit/numpy.svg" width="22" height="22" loading="lazy" alt="">NumPy</li>
+              <li><img src="/assets/toolkit/pandas.svg" width="22" height="22" loading="lazy" alt="">pandas</li>
+              <li><img src="/assets/toolkit/matplotlib.svg" width="22" height="22" loading="lazy" alt="">Matplotlib</li>
+              <li><img src="/assets/toolkit/jupyter.svg" width="22" height="22" loading="lazy" alt="">Jupyter</li>
+              <li><img src="/assets/toolkit/ilastik.png" width="22" height="22" loading="lazy" alt="">ilastik</li>
+              <li><img class="toolkit-logo-cellprofiler" src="/assets/toolkit/cellprofiler.png" width="22" height="22" loading="lazy" alt="">CellProfiler</li>
+              <li><img src="/assets/toolkit/fiji.webp" width="22" height="22" loading="lazy" alt="">Fiji / ImageJ</li>
+            </ul>
+          </article>
+          <article class="toolkit-group" data-reveal>
+            <h3><span aria-hidden="true">05</span> Cloud &amp; infrastructure</h3>
+            <ul class="toolkit-tools" aria-label="Cloud and infrastructure">
+              <li><img src="/assets/toolkit/aws.svg" width="22" height="22" loading="lazy" alt="">AWS</li>
+              <li><img src="/assets/toolkit/google-cloud.svg" width="22" height="22" loading="lazy" alt="">Google Cloud</li>
+              <li><img src="/assets/toolkit/docker.svg" width="22" height="22" loading="lazy" alt="">Docker</li>
+              <li><img src="/assets/toolkit/linux.svg" width="22" height="22" loading="lazy" alt="">Linux</li>
+              <li><img src="/assets/toolkit/postgresql.svg" width="22" height="22" loading="lazy" alt="">PostgreSQL</li>
+              <li><img src="/assets/toolkit/spark.svg" width="22" height="22" loading="lazy" alt="">Apache Spark</li>
+            </ul>
+          </article>
+          <article class="toolkit-group" data-reveal>
+            <h3><span aria-hidden="true">06</span> Development tools</h3>
+            <ul class="toolkit-tools" aria-label="Development tools and editors">
+              <li><img src="/assets/toolkit/git.svg" width="22" height="22" loading="lazy" alt="">Git</li>
+              <li><img src="/assets/toolkit/cmake.svg" width="22" height="22" loading="lazy" alt="">CMake</li>
+              <li><img src="/assets/toolkit/android-studio.svg" width="22" height="22" loading="lazy" alt="">Android Studio</li>
+              <li><img src="/assets/toolkit/qt.svg" width="22" height="22" loading="lazy" alt="">Qt Creator</li>
+              <li><img src="/assets/toolkit/codex.svg" width="22" height="22" loading="lazy" alt="">Codex</li>
+              <li><img src="/assets/toolkit/cursor.svg" width="22" height="22" loading="lazy" alt="">Cursor</li>
+              <li><img src="/assets/toolkit/claude.svg" width="22" height="22" loading="lazy" alt="">Claude</li>
+            </ul>
+          </article>
+        </div>
+      </section>
+
       <section class="contact-section" id="contact" aria-labelledby="contact-title">
-        <p class="section-index" data-reveal>03 &mdash; Contact</p>
+        <p class="section-index" data-reveal>04 &mdash; Contact</p>
         <h2 id="contact-title" data-reveal>Building a technical team?<br>Let’s talk.</h2>
         <a class="contact-mail" href="mailto:george.onyemenam@gmail.com" data-magnetic data-reveal>
           george.onyemenam@gmail.com

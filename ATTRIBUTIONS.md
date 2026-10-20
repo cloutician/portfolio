@@ -66,7 +66,22 @@ The original high-resolution camera captures are not included in this repository
 - **Source:** [Introducing our new logo and more ways we continue to improve Goodreads](https://www.goodreads.com/blog/show/2984-introducing-our-new-logo-and-more-ways-we-continue-to-improve-goodreads)
 - The mark is used only to identify a link to the associated Goodreads profile.
 
+### Toolkit marks
+
+- **Files:** `public/assets/toolkit/*.svg`
+- **Sources:** Devicon (MIT), Simple Icons (CC0), and Lobe Icons (MIT). Selected marks reuse the artwork in the existing GitHub profile badges.
+- **Source versions and licence texts:** Included in `public/assets/toolkit/SOURCES.md` and the adjacent `LICENSE.*.txt` files.
+- Brand names and marks identify the software used and belong to their respective owners. Dark lettering is used where needed for visibility on the light background.
+- SQL uses the existing generic database symbol rather than a vendor logo.
+- Fiji (`fiji.webp`), CellProfiler (`cellprofiler.png`) and ilastik (`ilastik.png`) use logo files supplied by George. CellProfiler's square icon is displayed from the left side of the supplied wordmark; the source image is retained unchanged.
+
 ## Software dependencies
+
+### Locally served fonts
+
+Space Grotesk (variable weights 300–700) and Space Mono (regular and bold) use the Latin WOFF2 files distributed by Google Fonts. The SIL Open Font License texts are retained in `public/assets/fonts/OFL-space-grotesk.txt` and `public/assets/fonts/OFL-space-mono.txt`. The families and type weights are unchanged; delivery is from the portfolio's own origin.
+
+Sources: [Space Grotesk](https://github.com/google/fonts/tree/main/ofl/spacegrotesk), [Space Mono](https://github.com/google/fonts/tree/main/ofl/spacemono).
 
 JavaScript dependency licences are recorded in their respective packages and lockfile. Key runtime/build dependencies include Three.js, Vite, Wrangler, the Cloudflare Vite plugin, the OpenAI Sites Vite plugin and Sharp.
 
