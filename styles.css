@@ -1021,9 +1021,10 @@ body.is-loaded .hero-scroll { transition-delay: 620ms; }
   inset: 0;
   z-index: 0;
   background: var(--black);
-  clip-path: inset(0 100% 0 0);
+  transform: translate3d(-100%, 0, 0);
   content: "";
-  transition: clip-path 360ms var(--ease);
+  transition: transform 360ms var(--ease);
+  will-change: transform;
 }
 
 .project-row::after {
@@ -1044,7 +1045,7 @@ body.is-loaded .hero-scroll { transition-delay: 620ms; }
 .project-row.is-pen-hover::before,
 .project-row:focus-visible::before,
 .project-row.is-active::before {
-  clip-path: inset(0);
+  transform: translate3d(0, 0, 0);
 }
 
 .project-row:hover::after,

@@ -3053,7 +3053,7 @@ if ("IntersectionObserver" in window) {
       heroIsVisible = entry.isIntersecting;
       if (heroIsVisible) requestAmbientRender();
     },
-    { rootMargin: "12% 0px" },
+    { rootMargin: "0px" },
   );
   heroVisibilityObserver.observe(hero);
 
