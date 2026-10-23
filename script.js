@@ -199,6 +199,8 @@ let heroPointer = { x: 0.74, y: 0.38 };
 let heroPointerSmooth = { x: 0.74, y: 0.38 };
 let heroPointerInside = false;
 let heroPointerPresence = 0.16;
+let heroSamplerRingPath = null;
+let heroSamplerRingDpr = 0;
 let heroPrecisionPointer = false;
 let heroIsVisible = true;
 let projectIsVisible = true;
@@ -2460,15 +2462,36 @@ function drawHeroSampler(ctx, pointerX, pointerY, dpr) {
   ctx.strokeStyle = `rgba(200,255,55,${0.27 * presence})`;
   ctx.beginPath();
   ctx.arc(pointerX, pointerY, 34 * dpr, -0.82, 0.72);
+  ctx.moveTo(
+    pointerX + Math.cos(2.32) * 34 * dpr,
+    pointerY + Math.sin(2.32) * 34 * dpr,
+  );
   ctx.arc(pointerX, pointerY, 34 * dpr, 2.32, 3.86);
   ctx.stroke();
 
-  ctx.setLineDash([2 * dpr, 7 * dpr]);
+  // Encode the gaps in the path instead of relying on native dashed arc strokes.
+  // Reuse it while the pixel ratio is unchanged; pointer movement only translates it.
+  if (!heroSamplerRingPath || heroSamplerRingDpr !== dpr) {
+    const radius = 52 * dpr;
+    const circumference = Math.PI * 2 * radius;
+    const dash = 2 * dpr;
+    const gap = 7 * dpr;
+    const path = new Path2D();
+    for (let distance = 0; distance < circumference; distance += dash + gap) {
+      const startAngle = distance / radius;
+      const endAngle = Math.min(distance + dash, circumference) / radius;
+      path.moveTo(radius * Math.cos(startAngle), radius * Math.sin(startAngle));
+      path.arc(0, 0, radius, startAngle, endAngle);
+    }
+    heroSamplerRingPath = path;
+    heroSamplerRingDpr = dpr;
+  }
+
+  ctx.save();
+  ctx.translate(pointerX, pointerY);
   ctx.strokeStyle = `rgba(244,243,238,${0.13 * presence})`;
-  ctx.beginPath();
-  ctx.arc(pointerX, pointerY, 52 * dpr, 0, Math.PI * 2);
-  ctx.stroke();
-  ctx.setLineDash([]);
+  ctx.stroke(heroSamplerRingPath);
+  ctx.restore();
 
   const tickInner = 40 * dpr;
   const tickOuter = 47 * dpr;
