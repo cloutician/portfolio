@@ -84,18 +84,18 @@
           <aside class="project-stage" id="project-stage" tabindex="-1" aria-label="Active project preview" aria-live="polite">
             <canvas id="project-canvas" aria-hidden="true"></canvas>
             <video id="project-video" muted loop playsinline preload="metadata" hidden></video>
-            <div class="project-placeholder-stage" id="project-placeholder" hidden>
-              <span class="placeholder-slot-number" aria-hidden="true">03</span>
-              <button class="worm-reset placeholder-camera-reset" id="placeholder-model-reset" type="button" aria-label="Reset 3D model camera angle" hidden>Reset</button>
-              <p class="placeholder-status"><i aria-hidden="true"></i><span id="placeholder-status-label">Upload queue</span></p>
-              <div class="placeholder-card">
-                <figure class="placeholder-cat-frame">
-                  <canvas id="placeholder-model-canvas" aria-label="Interactive 3D project preview. Drag to orbit. Magnification is fixed."></canvas>
-                  <p class="placeholder-cat-loading" id="placeholder-model-loading" role="status">Loading 3D preview&hellip;</p>
+            <div class="project-model-stage" id="project-model-stage" hidden>
+              <span class="model-slot-number" aria-hidden="true">03</span>
+              <button class="viewer-reset model-camera-reset" id="model-camera-reset" type="button" aria-label="Reset 3D model camera angle" hidden>Reset</button>
+              <p class="model-status"><i aria-hidden="true"></i><span id="model-status-label">Upload queue</span></p>
+              <div class="model-card">
+                <figure class="model-frame">
+                  <canvas id="project-model-canvas" aria-label="Interactive 3D project preview. Drag to orbit. Magnification is fixed."></canvas>
+                  <p class="model-loading" id="model-loading" role="status">Loading 3D preview&hellip;</p>
                 </figure>
-                <div class="placeholder-copy">
-                  <h3 id="placeholder-heading">More projects soon.</h3>
-                  <p id="placeholder-description">More projects are being prepared.</p>
+                <div class="model-copy">
+                  <h3 id="model-heading">More projects soon.</h3>
+                  <p id="model-description">More projects are being prepared.</p>
                 </div>
               </div>
             </div>
@@ -421,7 +421,7 @@
                 </span>
               </span>
             </div>
-            <button class="worm-reset" id="worm-reset" type="button" hidden>Reset</button>
+            <button class="viewer-reset" id="worm-reset" type="button" hidden>Reset</button>
             <div class="worm-sequence-nav" aria-label="Worm image navigation" hidden>
               <button id="worm-previous" type="button" aria-label="Previous worm image" disabled>&larr;</button>
               <span id="worm-sequence-count" aria-live="polite">01 / 06</span>

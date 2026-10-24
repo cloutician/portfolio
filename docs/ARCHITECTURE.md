@@ -8,7 +8,7 @@ The portfolio is predominantly a client-rendered, single-page experience:
 
 1. `index.html` supplies the semantic page and initial project state.
 2. `styles.css` owns the visual system, responsive layouts and interaction transitions.
-3. `script.js` coordinates project selection, WormProfiler, Touchline, the 3D placeholder and input-specific behaviour.
+3. `script.js` coordinates project selection, WormProfiler, Touchline, the 3D project previews and input-specific behaviour.
 4. `worm-lens-webgl.js` renders the WormProfiler magnifying lens through WebGL2 when the browser supports it.
 5. `public/streamline-sw.js` supports the site's asset-caching strategy.
 6. Vite builds the client assets and Cloudflare Worker bundle for deployment.
@@ -42,7 +42,9 @@ The public source therefore documents the interface and playback system but does
 
 ## Switch and the 3D project previews
 
-Switch (slot 03) and the queued project (slot 04) use `placeholder-viewer.js`, Three.js and `OrbitControls`. Switch has a dedicated case-study panel with a labelled original-game reference screenshot and a scoped warm orange/red/yellow theme; the remaining placeholder retains the cat. Per-slot configuration supplies the asset, animation, camera and accessible copy. One renderer caches the two models and their independent mixers. Selection tokens prevent a late asset load from replacing the currently requested model. The old `#project-placeholder-03` fragment remains an alias for `#project-switch`.
+Switch (Remake), in slot 03, and the queued project in slot 04 use `model-viewer.js`, Three.js and `OrbitControls`. Both use the model-neutral `project-model-stage` and `project-model-canvas` hooks. The `interactive: "model"` setting selects this viewer; the separate `queued: true` setting controls slot 04's placeholder styling, not which renderer is used. Per-model configuration supplies the asset, animation, camera framing and accessible copy. One renderer caches the two models and their independent mixers. Selection tokens prevent a late asset load from replacing the currently requested model.
+
+Switch has a dedicated case-study panel with a labelled original-game reference screenshot and scoped red/orange/yellow accents. Its rocket asset lives in `public/assets/switch/`; only the queued cat remains in `public/assets/placeholders/`. Cat camera angles are explicit configuration rather than hard-coded defaults inside the shared renderer. The old `#project-placeholder-03` fragment remains an alias for `#project-switch`, and slot 04 retains its existing `#project-placeholder-04` address.
 
 The rocket repeats its embedded `Thruster_Cycle` animation (6.4 seconds). Its orbit pivot is centred on the solid rocket housing, not the exhaust. The fixed default view is magnified 3× relative to the initial full-cycle framing. A rocket-only render surface spans the project pane, with an off-axis projection that preserves the body position and scale. Rendering never adjusts camera distance during rotation; neither model supports wheel or pinch zoom. The cat keeps its agreed camera angle with 10% greater optical magnification. Camera reset restores each fixed view without restarting its animation. The exported rocket body orientation is unchanged. Reduced-motion mode presents a still frame and renders only while the camera is changing.
 
@@ -68,6 +70,8 @@ The production website is available at [onyemenam.dev](https://onyemenam.dev).
 ### Scheduling and lens geometry
 
 Scroll and resize updates share one animation-frame queue for header progress, active navigation and responsive layout work. The progress indicator uses a transform rather than a changing width. The ambient canvas loop stops when none of its surfaces are visible.
+
+The three project-information panels share the tallest natural content height at the current viewport and font size. Temporary inert measurement panels are removed immediately, and their image aspect ratios are reserved without loading inactive media. Resizing or font readiness refreshes the shared minimum height; ordinary project switches reuse it. Content remains free to grow rather than being clipped, and the following section stays in the same position between case studies.
 
 Stable source-image rectangles are cached relative to the WormProfiler stage. Each lens draw still reads the stage's actual position, including sticky positioning. Zooms, resets, incoming images and swipes invalidate or bypass the cache and continue measuring the interpolated transforms. Shader code, texture-resolution limits, source-image files and interaction timings are unchanged.
 

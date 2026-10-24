@@ -4,7 +4,7 @@ import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 
 // One canvas/renderer, independent cached models and mixers. Selection is the only
 // operation allowed to mount a loaded model, so late loads cannot replace it.
-export class PlaceholderModelViewer {
+export class ProjectModelViewer {
   constructor(canvas, { reducedMotion = false, onInteract = () => {} } = {}) {
     this.canvas = canvas;
     this.reducedMotion = reducedMotion;
@@ -61,7 +61,7 @@ export class PlaceholderModelViewer {
     this.resizeObserver = new ResizeObserver(() => this.resize());
     this.resizeObserver.observe(canvas);
     this.resizeObserver.observe(canvas.parentElement);
-    this.resizeObserver.observe(canvas.closest(".project-placeholder-stage"));
+    this.resizeObserver.observe(canvas.closest(".project-model-stage"));
   }
 
   async load(config) {
@@ -103,7 +103,7 @@ export class PlaceholderModelViewer {
           bounds.setFromObject(model);
         }
         const root = new THREE.Group();
-        root.name = `placeholder-${config.key}`;
+        root.name = `project-model-${config.key}`;
         root.add(model);
         const anchor = config.orbitAnchor && model.getObjectByName(config.orbitAnchor);
         if (config.orbitAnchor && !anchor) throw new Error(`Missing ${config.orbitAnchor} orbit anchor in ${config.key}.`);
@@ -135,7 +135,7 @@ export class PlaceholderModelViewer {
     if (selection !== this.selection) return null;
     this.active = record;
     this.scene.add(record.root);
-    this.canvas.closest(".project-placeholder-stage").classList.toggle("has-expanded-model", !!config.expandViewport);
+    this.canvas.closest(".project-model-stage").classList.toggle("has-expanded-model", !!config.expandViewport);
     // The drawing area can grow without making the whole pane swallow touch
     // scrolling. Keep the original model-sized drag surface and sensitivity.
     const input = config.expandViewport ? this.canvas.parentElement : this.canvas;
@@ -166,12 +166,12 @@ export class PlaceholderModelViewer {
     const { camera, controls } = this;
     const oldDefault = record.defaultView;
     const direction = camera.position.clone().sub(controls.target).normalize();
-    camera.fov = record.config.fitAnimation ? 32 : 30;
+    camera.fov = record.config.fieldOfView ?? 30;
     camera.near = record.extent / 100;
     camera.far = record.extent * 20;
-    camera.zoom = record.config.fitAnimation ? 1 : (record.config.defaultZoom ?? 1);
+    camera.zoom = record.config.cameraOrbit ? (record.config.defaultZoom ?? 1) : 1;
     controls.target.set(0, 0, 0);
-    if (record.config.fitAnimation) {
+    if (!record.config.cameraOrbit) {
       const vertical = THREE.MathUtils.degToRad(camera.fov / 2);
       const horizontal = Math.atan(Math.tan(vertical) * camera.aspect);
       const projection = Math.sin(Math.min(vertical, horizontal));
@@ -179,14 +179,15 @@ export class PlaceholderModelViewer {
       const distance = fit * 1.12 / (record.config.defaultZoom ?? 1);
       camera.position.fromArray(record.config.cameraDirection).normalize().multiplyScalar(distance);
     } else {
-      // Keep the agreed cat angle; apply its configured fixed magnification
-      // optically without changing the orbit distance.
+      // Explicit orbit settings belong to each model, not the shared viewer.
+      // Apply fixed magnification optically without changing orbit distance.
+      const orbit = record.config.cameraOrbit;
       const initial = new THREE.Spherical().setFromVector3(
-        new THREE.Vector3(record.extent * 0.72, record.extent * 0.4, record.extent * 1.95),
+        new THREE.Vector3().fromArray(orbit.direction).multiplyScalar(record.extent),
       );
-      initial.radius *= 0.68;
-      initial.theta += THREE.MathUtils.degToRad(-42);
-      initial.phi += THREE.MathUtils.degToRad(7);
+      initial.radius *= orbit.radiusScale;
+      initial.theta += THREE.MathUtils.degToRad(orbit.azimuthDegrees);
+      initial.phi += THREE.MathUtils.degToRad(orbit.polarDegrees);
       camera.position.setFromSpherical(initial);
     }
     // Orbit only: neither pointer gestures nor the render path may dolly the
@@ -253,7 +254,7 @@ export class PlaceholderModelViewer {
       camera.quaternion.copy(view.quaternion);
       controls.enableDamping = damping;
     }
-    // Camera reset does not touch the mixer or restart the thrust/cat loop.
+    // Camera reset does not touch the mixer or restart the model animation.
     this.requestRender();
   }
 
@@ -288,7 +289,7 @@ export class PlaceholderModelViewer {
     if (!this.visible) return;
     const expanded = this.active?.config.expandViewport;
     const frame = this.canvas.parentElement;
-    const stage = this.canvas.closest(".project-placeholder-stage");
+    const stage = this.canvas.closest(".project-model-stage");
     if (expanded) {
       const anchor = frame.getBoundingClientRect();
       const pane = stage.getBoundingClientRect();

@@ -940,30 +940,30 @@ body.is-loaded .hero-scroll { transition-delay: 620ms; }
 
 .project-row:last-child { border-bottom: 0; }
 
-.project-row.is-placeholder {
+.project-row.is-queued {
   grid-template-columns: 2.25rem minmax(0, 1fr);
   min-height: 0;
 }
 
-.project-row.is-placeholder .project-headline {
+.project-row.is-queued .project-headline {
   align-content: center;
   padding-right: 0;
 }
 
-.project-row.is-placeholder .project-tags {
+.project-row.is-queued .project-tags {
   opacity: 1;
   transform: translate3d(0, 0, 0);
 }
 
-.project-row.is-placeholder .project-desc {
+.project-row.is-queued .project-desc {
   display: none;
 }
 
-.project-row.is-placeholder .project-title {
+.project-row.is-queued .project-title {
   padding-right: 0;
 }
 
-.project-row.is-placeholder .project-placeholder-model {
+.project-row.is-queued .project-model-badge {
   position: absolute;
   left: 0.8rem;
   bottom: 0.58rem;
@@ -984,14 +984,14 @@ body.is-loaded .hero-scroll { transition-delay: 620ms; }
   transition: border-color 220ms var(--ease), transform 300ms var(--ease);
 }
 
-.project-placeholder-model b {
+.project-model-badge b {
   font-family: var(--font-mono);
   font-size: 1rem;
   font-weight: 700;
   line-height: 1;
 }
 
-.project-placeholder-model small {
+.project-model-badge small {
   font-family: var(--font-mono);
   font-size: 0.4rem;
   font-weight: 700;
@@ -1000,18 +1000,18 @@ body.is-loaded .hero-scroll { transition-delay: 620ms; }
   text-transform: uppercase;
 }
 
-.project-row.is-placeholder:hover .project-placeholder-model,
-.project-row.is-placeholder.is-pen-hover .project-placeholder-model,
-.project-row.is-placeholder:focus-visible .project-placeholder-model,
-.project-row.is-placeholder.is-active .project-placeholder-model {
+.project-row.is-queued:hover .project-model-badge,
+.project-row.is-queued.is-pen-hover .project-model-badge,
+.project-row.is-queued:focus-visible .project-model-badge,
+.project-row.is-queued.is-active .project-model-badge {
   border-color: var(--lime);
   transform: scale(1.04);
 }
 
-.project-row.is-placeholder:hover .project-placeholder-model,
-.project-row.is-placeholder.is-pen-hover .project-placeholder-model,
-.project-row.is-placeholder:focus-visible .project-placeholder-model,
-.project-row.is-placeholder.is-active .project-placeholder-model {
+.project-row.is-queued:hover .project-model-badge,
+.project-row.is-queued.is-pen-hover .project-model-badge,
+.project-row.is-queued:focus-visible .project-model-badge,
+.project-row.is-queued.is-active .project-model-badge {
   color: var(--black);
   background-color: var(--lime);
 }
@@ -1136,10 +1136,10 @@ body.is-loaded .hero-scroll { transition-delay: 620ms; }
   transform: translate3d(0, -0.24rem, 0);
 }
 
-.project-row:not(.is-placeholder):hover .project-title,
-.project-row:not(.is-placeholder).is-pen-hover .project-title,
-.project-row:not(.is-placeholder):focus-visible .project-title,
-.project-row:not(.is-placeholder).is-active .project-title {
+.project-row:not(.is-queued):hover .project-title,
+.project-row:not(.is-queued).is-pen-hover .project-title,
+.project-row:not(.is-queued):focus-visible .project-title,
+.project-row:not(.is-queued).is-active .project-title {
   transform: translate3d(0, -0.52rem, 0);
 }
 
@@ -1195,10 +1195,10 @@ body.is-loaded .hero-scroll { transition-delay: 620ms; }
   transform: translate3d(0, 0.24rem, 0);
 }
 
-.project-row:not(.is-placeholder):hover .project-tags,
-.project-row:not(.is-placeholder).is-pen-hover .project-tags,
-.project-row:not(.is-placeholder):focus-visible .project-tags,
-.project-row:not(.is-placeholder).is-active .project-tags {
+.project-row:not(.is-queued):hover .project-tags,
+.project-row:not(.is-queued).is-pen-hover .project-tags,
+.project-row:not(.is-queued):focus-visible .project-tags,
+.project-row:not(.is-queued).is-active .project-tags {
   transform: translate3d(0, 0.38rem, 0);
 }
 
@@ -1267,7 +1267,7 @@ body.is-loaded .hero-scroll { transition-delay: 620ms; }
   object-fit: cover;
 }
 
-.project-placeholder-stage {
+.project-model-stage {
   position: absolute;
   z-index: 4;
   inset: 0 0 52px;
@@ -1282,9 +1282,9 @@ body.is-loaded .hero-scroll { transition-delay: 620ms; }
   color: var(--white);
 }
 
-.project-placeholder-stage[hidden] { display: none; }
+.project-model-stage[hidden] { display: none; }
 
-.placeholder-slot-number {
+.model-slot-number {
   position: absolute;
   top: 0.8rem;
   right: 1rem;
@@ -1295,18 +1295,18 @@ body.is-loaded .hero-scroll { transition-delay: 620ms; }
   letter-spacing: -0.045em;
 }
 
-.placeholder-card {
+.model-card {
   position: relative;
   z-index: 1;
   display: grid;
   grid-template-columns: minmax(8rem, 12rem) minmax(0, 1fr);
-  grid-template-areas: "cat copy";
+  grid-template-areas: "model copy";
   align-items: center;
   gap: 1rem clamp(1.25rem, 3vw, 2.5rem);
   width: min(78%, 38rem);
 }
 
-.placeholder-status {
+.model-status {
   position: absolute;
   z-index: 5;
   top: 1rem;
@@ -1322,7 +1322,7 @@ body.is-loaded .hero-scroll { transition-delay: 620ms; }
   letter-spacing: 0.08em;
 }
 
-.placeholder-status i {
+.model-status i {
   width: 0.45rem;
   height: 0.45rem;
   border-radius: 50%;
@@ -1331,9 +1331,9 @@ body.is-loaded .hero-scroll { transition-delay: 620ms; }
   animation: statusPulse 2.4s ease-out infinite;
 }
 
-.placeholder-cat-frame {
+.model-frame {
   position: relative;
-  grid-area: cat;
+  grid-area: model;
   margin: 0;
   overflow: visible;
   border: 0;
@@ -1341,7 +1341,7 @@ body.is-loaded .hero-scroll { transition-delay: 620ms; }
   transform: none;
 }
 
-.placeholder-cat-frame canvas {
+.model-frame canvas {
   display: block;
   width: 100%;
   aspect-ratio: 1;
@@ -1350,40 +1350,40 @@ body.is-loaded .hero-scroll { transition-delay: 620ms; }
   overscroll-behavior: contain;
 }
 
-.placeholder-cat-frame canvas:active {
+.model-frame canvas:active {
   cursor: grabbing;
 }
 
-/* Let the rocket's exhaust use the pane, not the cat's small square viewport.
+/* Let an expanded model use the pane, not the standard square viewport.
    The anchor keeps the existing card layout, body position and centre glow. */
-.has-expanded-model .placeholder-cat-frame {
+.has-expanded-model .model-frame {
   aspect-ratio: 1;
   cursor: grab;
 }
 
-.has-expanded-model .placeholder-cat-frame:active {
+.has-expanded-model .model-frame:active {
   cursor: grabbing;
 }
 
-.has-expanded-model .placeholder-cat-frame canvas {
+.has-expanded-model .model-frame canvas {
   position: absolute;
   max-width: none;
   aspect-ratio: auto;
   pointer-events: none;
 }
 
-.has-expanded-model .placeholder-slot-number,
-.has-expanded-model .placeholder-copy {
+.has-expanded-model .model-slot-number,
+.has-expanded-model .model-copy {
   position: relative;
   z-index: 2;
 }
 
-.has-expanded-model .placeholder-slot-number {
+.has-expanded-model .model-slot-number {
   position: absolute;
   pointer-events: none;
 }
 
-.placeholder-cat-loading {
+.model-loading {
   position: absolute;
   inset: 0;
   display: grid;
@@ -1397,15 +1397,15 @@ body.is-loaded .hero-scroll { transition-delay: 620ms; }
   pointer-events: none;
 }
 
-.placeholder-cat-loading[hidden] {
+.model-loading[hidden] {
   display: none;
 }
 
-.placeholder-copy {
+.model-copy {
   grid-area: copy;
 }
 
-.placeholder-copy h3 {
+.model-copy h3 {
   max-width: 9ch;
   margin: 0 0 0.85rem;
   font-size: clamp(2rem, 4.5vw, 4.5rem);
@@ -1414,7 +1414,7 @@ body.is-loaded .hero-scroll { transition-delay: 620ms; }
   letter-spacing: -0.045em;
 }
 
-.placeholder-copy p {
+.model-copy p {
   max-width: 29ch;
   margin: 0;
   color: rgba(244, 243, 238, 0.62);
@@ -2746,7 +2746,7 @@ html.is-handset .comparison-control {
   animation: wormStagePreviousIn 420ms cubic-bezier(0.65, 0, 0.18, 1) both;
 }
 
-.worm-reset {
+.viewer-reset {
   position: absolute;
   z-index: 6;
   top: 0.75rem;
@@ -2763,12 +2763,12 @@ html.is-handset .comparison-control {
   transition: border-color 180ms ease, color 180ms ease;
 }
 
-.worm-reset[hidden] {
+.viewer-reset[hidden] {
   display: none;
 }
 
-.worm-reset:hover,
-.worm-reset:focus-visible {
+.viewer-reset:hover,
+.viewer-reset:focus-visible {
   border-color: var(--lime);
   color: var(--lime);
   outline: none;
@@ -3197,28 +3197,28 @@ html.is-handset .comparison-control {
     border: 1px solid var(--black);
   }
 
-  .project-row.is-placeholder {
+  .project-row.is-queued {
     grid-row: auto;
     min-height: 0;
   }
 
-  .project-row:not(.is-placeholder) {
+  .project-row:not(.is-queued) {
     min-height: 0;
   }
 
-  .project-row:not(.is-placeholder):is(:hover, :focus-visible, .is-pen-hover, .is-active) .project-title {
+  .project-row:not(.is-queued):is(:hover, :focus-visible, .is-pen-hover, .is-active) .project-title {
     transform: translate3d(0, -0.32rem, 0);
   }
 
-  .project-row:not(.is-placeholder):is(:hover, :focus-visible, .is-pen-hover, .is-active) .project-desc {
+  .project-row:not(.is-queued):is(:hover, :focus-visible, .is-pen-hover, .is-active) .project-desc {
     padding-top: 0.22rem;
   }
 
-  .project-row:not(.is-placeholder) .project-tags {
+  .project-row:not(.is-queued) .project-tags {
     margin-top: 0.24rem;
   }
 
-  .project-row:not(.is-placeholder):is(:hover, :focus-visible, .is-pen-hover, .is-active) .project-tags {
+  .project-row:not(.is-queued):is(:hover, :focus-visible, .is-pen-hover, .is-active) .project-tags {
     transform: translate3d(0, 0.18rem, 0);
   }
 
@@ -3281,7 +3281,7 @@ html.is-handset .comparison-control {
     border: 1px solid var(--black);
   }
 
-  .project-row.is-placeholder {
+  .project-row.is-queued {
     grid-row: auto;
     min-height: 0;
   }
@@ -3472,7 +3472,7 @@ html.is-handset .comparison-control {
     height: clamp(26.5rem, 108vw, 29rem);
   }
 
-  .project-row:not(.is-placeholder) {
+  .project-row:not(.is-queued) {
     min-height: 0;
   }
 
@@ -3486,21 +3486,21 @@ html.is-handset .comparison-control {
     display: none;
   }
 
-  .project-row.is-placeholder .project-headline {
+  .project-row.is-queued .project-headline {
     padding-right: 0;
   }
 
-  .project-row.is-placeholder {
+  .project-row.is-queued {
     grid-template-columns: 2.2rem minmax(0, 1fr);
   }
 
-  .project-row.is-placeholder .project-placeholder-model {
+  .project-row.is-queued .project-model-badge {
     left: 0.65rem;
     bottom: 0.55rem;
     width: 2.65rem;
   }
 
-  .placeholder-card {
+  .model-card {
     grid-template-columns: minmax(6.5rem, 8.5rem) minmax(0, 1fr);
     width: 84%;
     gap: 0.75rem 1.1rem;
@@ -3559,11 +3559,11 @@ html.is-handset .project-arrow {
   display: none;
 }
 
-html.is-handset .project-row.is-placeholder {
+html.is-handset .project-row.is-queued {
   grid-template-columns: 2.2rem minmax(0, 1fr);
 }
 
-html.is-handset .project-row.is-placeholder .project-placeholder-model {
+html.is-handset .project-row.is-queued .project-model-badge {
   left: 0.65rem;
   bottom: 0.55rem;
   width: 2.65rem;
@@ -3637,6 +3637,8 @@ html.is-handset .about-copy p {
     "intro metrics"
     "pipeline pipeline"
     "status status";
+  grid-template-rows: 1fr auto auto;
+  min-height: var(--evidence-height, 0px);
   margin-bottom: clamp(4.5rem, 7vw, 7rem);
   border: 1px solid var(--black);
   border-top: 0;
@@ -3645,6 +3647,22 @@ html.is-handset .about-copy p {
 
 .project-evidence[hidden] {
   display: none;
+}
+
+.evidence-size-probe {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 0;
+  overflow: hidden;
+  visibility: hidden;
+  pointer-events: none;
+  contain: layout style;
+}
+
+.evidence-size-probe > .project-evidence {
+  min-height: 0;
+  margin: 0;
 }
 
 .evidence-media[hidden],
@@ -4020,6 +4038,7 @@ html.is-handset .about-copy p {
 @media (max-width: 780px) {
   .project-evidence {
     grid-template-columns: 1fr;
+    grid-template-rows: 1fr auto auto auto;
     grid-template-areas:
       "intro"
       "metrics"
@@ -4116,20 +4135,20 @@ html.is-handset .about-copy p {
 }
 
 @media (max-width: 360px) {
-  .placeholder-card {
+  .model-card {
     grid-template-columns: minmax(5.5rem, 6.25rem) minmax(0, 1fr);
     gap: 0.5rem;
     width: calc(100% - 1rem);
   }
 
-  .placeholder-copy h3 {
+  .model-copy h3 {
     max-width: none;
     margin-bottom: 0.4rem;
     font-size: clamp(1.5rem, 8vw, 1.8rem);
     line-height: 0.9;
   }
 
-  .placeholder-copy p {
+  .model-copy p {
     display: -webkit-box;
     overflow: hidden;
     font-size: 0.6rem;
@@ -4138,7 +4157,7 @@ html.is-handset .about-copy p {
     -webkit-line-clamp: 3;
   }
 
-  .placeholder-slot-number {
+  .model-slot-number {
     font-size: 2.35rem;
   }
 }

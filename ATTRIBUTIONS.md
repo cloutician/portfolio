@@ -27,7 +27,7 @@ The original high-resolution camera captures are not included in this repository
 
 ### Switch rocket
 
-- **File:** `public/assets/placeholders/switch-rocket-thrust-cycle.glb`
+- **File:** `public/assets/switch/switch-rocket-thrust-cycle.glb`
 - **Source:** Corrected export supplied by George Onyemenam from the Switch Runner project
 - **Animation:** Embedded `Thruster_Cycle`, a 6.4-second ignition, thrust, shutdown and engine-off loop
 - **Changes:** The supplied GLB is retained byte-for-byte. The portfolio adds camera framing, lighting and playback controls; it does not alter the exported body orientation or pitch.

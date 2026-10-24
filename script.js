@@ -72,20 +72,20 @@ const projects = [
   },
   {
     slug: "switch",
-    title: "Switch",
+    title: "Switch (Remake)",
     previewTitle: "Switch (Remake)",
     type: "Game remake",
     year: "2026",
     demo: "",
     scene: 2,
-    interactive: "placeholder",
+    interactive: "model",
     model: "rocket",
     desc: "Recreating Atomicom’s arcade runner for web and Android.",
-    tags: ["Web + Android", "3D", "Game remake"],
+    tags: ["Web + Android", "3D model", "Game remake"],
     evidence: {
       eyebrow: "03 / Switch / Independent remake / In development",
       title: "Recreating Switch for web and Android.",
-      summary: "I’m recreating Atomicom’s Switch for web and Android. The full game is roughly 60% complete; the animated ship shown here is an interactive preview of that wider remake.",
+      summary: "I’m recreating Atomicom’s Switch for web and Android. The full game is roughly 85% complete; the animated ship shown here is an interactive preview of that wider remake.",
       metrics: [],
       media: {
         src: "/assets/switch/original-game.webp",
@@ -96,12 +96,12 @@ const projects = [
       pipeline: [
         ["Switch", "Original game by Atomicom"],
         ["Web + Android", "Target platforms"],
-        ["~60%", "Full-game completion (estimate)"],
+        ["~85%", "Full-game completion (estimate)"],
         ["2026", "Year-end completion target"],
       ],
       status: [
         ["Why rebuild", "Legacy native-library issues stop the original running on my newer Android devices. Reverse engineering remains an open avenue, but the remake is how I’m moving the project forward."],
-        ["Current build", "Development is ongoing on the full game, with roughly 60% of the remake complete. I’m aiming to finish before the end of 2026."],
+        ["Current build", "Development is ongoing on the full game, with roughly 85% of the remake complete. I’m aiming to finish before the end of 2026."],
       ],
     },
   },
@@ -113,24 +113,25 @@ const projects = [
     year: "Soon",
     demo: "",
     scene: 3,
-    interactive: "placeholder",
-    placeholder: true,
+    interactive: "model",
+    queued: true,
     model: "cat",
     desc: "A new case study is being prepared. The cat is holding this slot for now.",
     tags: ["3D model", "In progress"],
   },
 ];
 
-const placeholderModels = {
+const modelConfigs = {
   rocket: {
     key: "rocket",
-    url: "/assets/placeholders/switch-rocket-thrust-cycle.glb",
+    url: "/assets/switch/switch-rocket-thrust-cycle.glb",
     animation: "Thruster_Cycle",
     fitAnimation: true,
     orbitAnchor: "Folded_Grey_Housing",
     defaultZoom: 3,
     expandViewport: true,
     autoRotateSpeed: 0.5,
+    fieldOfView: 32,
     cameraDirection: [1.5, 1.55, -1.4],
     exposure: 0.9,
     reducedTime: 1.6,
@@ -139,13 +140,19 @@ const placeholderModels = {
     error: "The Switch rocket could not be loaded.",
     heading: "Switch.",
     status: "Independent remake",
-    description: "My recreation of Atomicom’s arcade runner for web and Android. The full game is roughly 60% complete.",
+    description: "My recreation of Atomicom’s arcade runner for web and Android. The full game is roughly 85% complete.",
     resetLabel: "Reset Switch rocket camera angle",
   },
   cat: {
     key: "cat",
     url: "/assets/placeholders/oiia-cat.glb",
     defaultZoom: 1.1,
+    cameraOrbit: {
+      direction: [0.72, 0.4, 1.95],
+      radiusScale: 0.68,
+      azimuthDegrees: -42,
+      polarDegrees: 7,
+    },
     entryHold: 1000,
     label: "Interactive 3D model of the OIIAIOOO spinning cat. Drag to orbit. Magnification is fixed.",
     loading: "Loading 3D cat…",
@@ -164,15 +171,8 @@ const stageTitle = document.querySelector("#stage-title");
 const stageType = document.querySelector("#stage-type");
 const stageVideo = document.querySelector("#project-video");
 const projectEvidence = document.querySelector("#project-evidence");
-const evidenceEyebrow = document.querySelector("#evidence-eyebrow");
-const evidenceTitle = document.querySelector("#evidence-title");
-const evidenceSummary = document.querySelector("#evidence-summary");
 const evidenceMetrics = document.querySelector("#evidence-metrics");
-const evidencePipeline = document.querySelector("#evidence-pipeline");
-const evidenceStatus = document.querySelector("#evidence-status");
-const evidenceMedia = document.querySelector("#evidence-media");
-const evidenceImage = document.querySelector("#evidence-image");
-const evidenceCaption = document.querySelector("#evidence-caption");
+let evidenceSizingKey = "";
 let wormStage = document.querySelector("#worm-stage");
 let wormMedia = document.querySelector("#worm-media");
 let wormZoomTrigger = document.querySelector("#worm-zoom-trigger");
@@ -194,14 +194,14 @@ const hero = document.querySelector(".hero");
 const heroCanvas = document.querySelector("#hero-canvas");
 const projectStage = document.querySelector(".project-stage");
 const projectCanvas = document.querySelector("#project-canvas");
-const projectPlaceholder = document.querySelector("#project-placeholder");
-const placeholderSlotNumber = document.querySelector(".placeholder-slot-number");
-const placeholderCanvas = document.querySelector("#placeholder-model-canvas");
-const placeholderLoading = document.querySelector("#placeholder-model-loading");
-const placeholderReset = document.querySelector("#placeholder-model-reset");
-const placeholderDescription = document.querySelector("#placeholder-description");
-const placeholderHeading = document.querySelector("#placeholder-heading");
-const placeholderStatus = document.querySelector("#placeholder-status-label");
+const projectModelStage = document.querySelector("#project-model-stage");
+const modelSlotNumber = document.querySelector(".model-slot-number");
+const modelCanvas = document.querySelector("#project-model-canvas");
+const modelLoading = document.querySelector("#model-loading");
+const modelReset = document.querySelector("#model-camera-reset");
+const modelDescription = document.querySelector("#model-description");
+const modelHeading = document.querySelector("#model-heading");
+const modelStatus = document.querySelector("#model-status-label");
 const touchlineStage = document.querySelector("#touchline-stage-lite");
 const touchlineViewport = document.querySelector(".tl-lite-viewport");
 const touchlineMedia = document.querySelector(".tl-lite-media");
@@ -320,9 +320,9 @@ let touchlineScrubPointerId = null;
 let touchlineScrubFrame = 0;
 let touchlineScrubClientX = 0;
 let touchlineDataPromise = null;
-let placeholderViewerPromise = null;
-let placeholderViewer = null;
-let placeholderSelection = 0;
+let modelViewerPromise = null;
+let modelViewer = null;
+let modelSelection = 0;
 const touchlineFrameImageCache = new Map();
 const wormAssetCache = new Map();
 const wormSourceCache = new Map();
@@ -1227,71 +1227,71 @@ function toggleTouchlinePlayback() {
   }).catch(() => stopTouchlinePlayback());
 }
 
-function loadPlaceholderViewer() {
-  if (!placeholderViewerPromise) {
-    placeholderViewerPromise = import("./placeholder-viewer.js").then(({ PlaceholderModelViewer }) => {
-      placeholderViewer = new PlaceholderModelViewer(placeholderCanvas, {
+function loadModelViewer() {
+  if (!modelViewerPromise) {
+    modelViewerPromise = import("./model-viewer.js").then(({ ProjectModelViewer }) => {
+      modelViewer = new ProjectModelViewer(modelCanvas, {
         reducedMotion,
         onInteract: () => {
-          if (!projectPlaceholder.hidden && placeholderViewer?.active) placeholderReset.hidden = false;
+          if (!projectModelStage.hidden && modelViewer?.active) modelReset.hidden = false;
         },
       });
-      return placeholderViewer;
+      return modelViewer;
     }).catch((error) => {
-      placeholderViewerPromise = null;
+      modelViewerPromise = null;
       throw error;
     });
   }
-  return placeholderViewerPromise;
+  return modelViewerPromise;
 }
 
-async function startPlaceholderViewer(project) {
-  const config = placeholderModels[project.model];
-  const selection = ++placeholderSelection;
-  placeholderViewer?.cancelSelection();
-  placeholderCanvas.style.visibility = "hidden";
-  placeholderCanvas.setAttribute("aria-label", config.label);
-  placeholderReset.setAttribute("aria-label", config.resetLabel);
-  placeholderReset.hidden = true;
-  placeholderDescription.textContent = config.description;
-  placeholderHeading.textContent = config.heading;
-  placeholderStatus.textContent = config.status;
-  projectPlaceholder.dataset.model = config.key;
-  delete projectPlaceholder.dataset.loadedModel;
-  projectPlaceholder.classList.remove("is-ready");
-  projectPlaceholder.classList.remove("is-error");
-  projectPlaceholder.classList.add("is-loading");
-  placeholderLoading.hidden = false;
-  placeholderLoading.textContent = config.loading;
+async function startModelViewer(project) {
+  const config = modelConfigs[project.model];
+  const selection = ++modelSelection;
+  modelViewer?.cancelSelection();
+  modelCanvas.style.visibility = "hidden";
+  modelCanvas.setAttribute("aria-label", config.label);
+  modelReset.setAttribute("aria-label", config.resetLabel);
+  modelReset.hidden = true;
+  modelDescription.textContent = config.description;
+  modelHeading.textContent = config.heading;
+  modelStatus.textContent = config.status;
+  projectModelStage.dataset.model = config.key;
+  delete projectModelStage.dataset.loadedModel;
+  projectModelStage.classList.remove("is-ready");
+  projectModelStage.classList.remove("is-error");
+  projectModelStage.classList.add("is-loading");
+  modelLoading.hidden = false;
+  modelLoading.textContent = config.loading;
   try {
-    const viewer = await loadPlaceholderViewer();
-    if (selection !== placeholderSelection || projectPlaceholder.hidden) return;
+    const viewer = await loadModelViewer();
+    if (selection !== modelSelection || projectModelStage.hidden) return;
     viewer.setVisible(projectIsVisible && !document.hidden);
     const record = await viewer.select(config);
-    if (!record || selection !== placeholderSelection || projectPlaceholder.hidden) return;
-    projectPlaceholder.dataset.loadedModel = config.key;
-    projectPlaceholder.classList.remove("is-loading");
-    projectPlaceholder.classList.add("is-ready");
-    placeholderLoading.hidden = true;
+    if (!record || selection !== modelSelection || projectModelStage.hidden) return;
+    projectModelStage.dataset.loadedModel = config.key;
+    projectModelStage.classList.remove("is-loading");
+    projectModelStage.classList.add("is-ready");
+    modelLoading.hidden = true;
   } catch (error) {
-    if (selection !== placeholderSelection || projectPlaceholder.hidden) return;
-    projectPlaceholder.classList.remove("is-loading");
-    projectPlaceholder.classList.add("is-error");
-    placeholderLoading.textContent = config.error;
+    if (selection !== modelSelection || projectModelStage.hidden) return;
+    projectModelStage.classList.remove("is-loading");
+    projectModelStage.classList.add("is-error");
+    modelLoading.textContent = config.error;
     throw error;
   }
 }
 
-function stopPlaceholderViewer() {
-  placeholderSelection++;
-  placeholderViewer?.cancelSelection();
-  placeholderViewer?.setVisible(false);
-  delete projectPlaceholder.dataset.loadedModel;
+function stopModelViewer() {
+  modelSelection++;
+  modelViewer?.cancelSelection();
+  modelViewer?.setVisible(false);
+  delete projectModelStage.dataset.loadedModel;
 }
 
 function syncProjectActivity() {
   const visible = projectIsVisible && !document.hidden;
-  placeholderViewer?.setVisible(visible && !projectPlaceholder.hidden);
+  modelViewer?.setVisible(visible && !projectModelStage.hidden);
   if (!visible) {
     suspendTouchlinePlayback();
     cancelAnimationFrame(wormLensRenderAnimationFrame);
@@ -1313,9 +1313,9 @@ function syncProjectActivity() {
   requestAmbientRender();
 }
 
-placeholderReset.addEventListener("click", () => {
-  placeholderViewer?.resetView({ animate: true });
-  placeholderReset.hidden = true;
+modelReset.addEventListener("click", () => {
+  modelViewer?.resetView({ animate: true });
+  modelReset.hidden = true;
 });
 
 function renderProjects() {
@@ -1324,7 +1324,7 @@ function renderProjects() {
     .map(
       (project, index) => `
         <button
-          class="project-row${index === 0 ? " is-active" : ""}${project.placeholder ? " is-placeholder" : ""}"
+          class="project-row${index === 0 ? " is-active" : ""}${project.queued ? " is-queued" : ""}"
           type="button"
           data-project-index="${index}"
           data-project="${project.slug}"
@@ -1341,8 +1341,8 @@ function renderProjects() {
             <span>${project.type}</span>
             <span>${project.year}</span>
           </span>
-          ${project.placeholder ? `
-            <span class="project-placeholder-model" aria-hidden="true">
+          ${project.queued ? `
+            <span class="project-model-badge" aria-hidden="true">
               <b>3D</b>
               <small>Model</small>
             </span>
@@ -1369,11 +1369,20 @@ function syncMetricNotePointers() {
   });
 }
 
-function renderProjectEvidence(project) {
+function renderProjectEvidence(project, panel = projectEvidence, measureOnly = false) {
   const evidence = project.evidence;
-  projectEvidence.hidden = !evidence;
+  panel.hidden = !evidence;
   if (!evidence) return;
-  projectEvidence.dataset.project = project.slug;
+  const evidenceEyebrow = panel.querySelector(".evidence-eyebrow");
+  const evidenceTitle = panel.querySelector(".evidence-intro h3");
+  const evidenceSummary = panel.querySelector(".evidence-intro > p:last-child");
+  const evidenceMetrics = panel.querySelector(".evidence-metrics");
+  const evidencePipeline = panel.querySelector(".evidence-pipeline");
+  const evidenceStatus = panel.querySelector(".evidence-status");
+  const evidenceMedia = panel.querySelector(".evidence-media");
+  const evidenceImage = evidenceMedia.querySelector("img");
+  const evidenceCaption = evidenceMedia.querySelector("figcaption");
+  panel.dataset.project = project.slug;
   evidenceEyebrow.textContent = evidence.eyebrow;
   evidenceTitle.textContent = evidence.title;
   evidenceSummary.textContent = evidence.summary;
@@ -1381,8 +1390,15 @@ function renderProjectEvidence(project) {
   evidenceMedia.hidden = !evidence.media;
   evidencePipeline.setAttribute("aria-label", evidence.pipelineLabel || "Project pipeline");
   if (evidence.media) {
-    if (evidenceImage.getAttribute("src") !== evidence.media.src) evidenceImage.src = evidence.media.src;
-    evidenceImage.alt = evidence.media.alt;
+    if (measureOnly) {
+      // Reserve the supplied aspect ratio without fetching an inactive image.
+      evidenceImage.removeAttribute("src");
+      evidenceImage.alt = "";
+      evidenceImage.style.aspectRatio = `${evidenceImage.getAttribute("width")} / ${evidenceImage.getAttribute("height")}`;
+    } else {
+      if (evidenceImage.getAttribute("src") !== evidence.media.src) evidenceImage.src = evidence.media.src;
+      evidenceImage.alt = evidence.media.alt;
+    }
     evidenceCaption.textContent = evidence.media.caption;
   } else {
     evidenceImage.removeAttribute("src");
@@ -1412,23 +1428,25 @@ function renderProjectEvidence(project) {
       tooltip.textContent = note;
       term.append(trigger, tooltip);
 
-      let closeTimer = 0;
-      const setOpen = (open) => {
-        window.clearTimeout(closeTimer);
-        item.classList.toggle("is-note-open", open);
-        trigger.setAttribute("aria-expanded", String(open));
-        if (open) closeTimer = window.setTimeout(() => setOpen(false), 5000);
-      };
-      trigger.addEventListener("click", (event) => {
-        event.stopPropagation();
-        setOpen(!item.classList.contains("is-note-open"));
-      });
-      trigger.addEventListener("pointerenter", (event) => {
-        if (event.pointerType === "pen") item.classList.add("is-pen-note-hover");
-      });
-      trigger.addEventListener("pointerleave", (event) => {
-        if (event.pointerType === "pen") item.classList.remove("is-pen-note-hover");
-      });
+      if (!measureOnly) {
+        let closeTimer = 0;
+        const setOpen = (open) => {
+          window.clearTimeout(closeTimer);
+          item.classList.toggle("is-note-open", open);
+          trigger.setAttribute("aria-expanded", String(open));
+          if (open) closeTimer = window.setTimeout(() => setOpen(false), 5000);
+        };
+        trigger.addEventListener("click", (event) => {
+          event.stopPropagation();
+          setOpen(!item.classList.contains("is-note-open"));
+        });
+        trigger.addEventListener("pointerenter", (event) => {
+          if (event.pointerType === "pen") item.classList.add("is-pen-note-hover");
+        });
+        trigger.addEventListener("pointerleave", (event) => {
+          if (event.pointerType === "pen") item.classList.remove("is-pen-note-hover");
+        });
+      }
     } else {
       term.textContent = value;
     }
@@ -1456,8 +1474,49 @@ function renderProjectEvidence(project) {
     item.append(title, copy);
     return item;
   }));
-  requestAnimationFrame(syncMetricNotePointers);
-  document.fonts?.ready.then(syncMetricNotePointers);
+  if (!measureOnly) {
+    syncProjectEvidenceHeight();
+    requestAnimationFrame(syncMetricNotePointers);
+  }
+}
+
+function syncProjectEvidenceHeight() {
+  if (projectEvidence.hidden) return;
+  const width = projectEvidence.getBoundingClientRect().width;
+  const fontSize = getComputedStyle(document.documentElement).fontSize;
+  // Headings and padding also use vw, even after the panel hits its max width.
+  const sizingKey = `${width}:${window.innerWidth}:${fontSize}`;
+  if (!width || sizingKey === evidenceSizingKey) return;
+
+  // Measure natural content only when the panel width (or loaded font) changes.
+  // No permanent hidden panels, hover-time work, extra image loads or clipping.
+  const probe = document.createElement("div");
+  probe.className = "evidence-size-probe";
+  probe.style.width = `${width}px`;
+  probe.inert = true;
+  probe.setAttribute("aria-hidden", "true");
+  const panels = projects.filter(project => project.evidence).map(project => {
+    const panel = projectEvidence.cloneNode(true);
+    panel.removeAttribute("id");
+    panel.removeAttribute("data-reveal");
+    panel.removeAttribute("aria-live");
+    renderProjectEvidence(project, panel, true);
+    panel.querySelectorAll("[id], [aria-describedby]").forEach(element => {
+      element.removeAttribute("id");
+      element.removeAttribute("aria-describedby");
+    });
+    probe.append(panel);
+    return panel;
+  });
+  document.body.append(probe);
+  try {
+    // Leave one pixel for intrinsic-image border rounding in the unloaded probe.
+    const height = Math.ceil(Math.max(...panels.map(panel => panel.getBoundingClientRect().height))) + 1;
+    projectEvidence.style.setProperty("--evidence-height", `${height}px`);
+    evidenceSizingKey = sizingKey;
+  } finally {
+    probe.remove();
+  }
 }
 
 document.addEventListener("click", (event) => {
@@ -1514,8 +1573,8 @@ function setActiveProject(index, { userInitiated = false, updateHistory = false 
   }
 
   const previousProject = projects[activeProject];
-  const isPlaceholder = project.interactive === "placeholder";
-  const isPlaceholderSlotSwitch = isPlaceholder && previousProject?.interactive === "placeholder";
+  const isModelProject = project.interactive === "model";
+  const isModelSwitch = isModelProject && previousProject?.interactive === "model";
   activeProject = index;
   projectIndex.querySelectorAll(".project-row").forEach((row, rowIndex) => {
     const isActive = rowIndex === index;
@@ -1524,7 +1583,7 @@ function setActiveProject(index, { userInitiated = false, updateHistory = false 
   });
 
   stageNumber.textContent = padNumber(index);
-  if (isPlaceholder) placeholderSlotNumber.textContent = padNumber(index);
+  if (isModelProject) modelSlotNumber.textContent = padNumber(index);
   stageTitle.textContent = project.previewTitle || project.title;
   projectStage.dataset.project = project.slug;
   stageType.textContent = project.type;
@@ -1534,19 +1593,19 @@ function setActiveProject(index, { userInitiated = false, updateHistory = false 
     if (window.location.hash !== nextHash) history.pushState(null, "", nextHash);
   }
 
-  if (isPlaceholderSlotSwitch) {
-    startPlaceholderViewer(project).catch((error) => console.warn(error));
+  if (isModelSwitch) {
+    startModelViewer(project).catch((error) => console.warn(error));
     if (userInitiated) focusProjectPreview();
     return;
   }
 
   const isTouchline = project.interactive === "touchline";
   touchlineStage.hidden = !isTouchline;
-  projectPlaceholder.hidden = !isPlaceholder;
+  projectModelStage.hidden = !isModelProject;
   projectStage.classList.toggle("is-touchline", isTouchline);
-  projectStage.classList.toggle("is-placeholder", isPlaceholder);
+  projectStage.classList.toggle("is-model", isModelProject);
   if (!isTouchline) stopTouchlinePlayback();
-  if (!isPlaceholder) stopPlaceholderViewer();
+  if (!isModelProject) stopModelViewer();
 
   if (project.interactive === "worm") {
     projectCanvas.hidden = true;
@@ -1565,11 +1624,11 @@ function setActiveProject(index, { userInitiated = false, updateHistory = false 
   wormSequenceNav.hidden = true;
   wormReset.hidden = true;
 
-  if (isPlaceholder) {
+  if (isModelProject) {
     projectCanvas.hidden = true;
     stageVideo.pause();
     stageVideo.hidden = true;
-    startPlaceholderViewer(project).catch((error) => console.warn(error));
+    startModelViewer(project).catch((error) => console.warn(error));
     if (userInitiated) focusProjectPreview();
     return;
   }
@@ -2778,6 +2837,7 @@ function queueViewportUpdate(flags = 1) {
     if (pending & 2) {
       invalidateWormLensGeometry(80);
       syncProjectDescriptionHeights();
+      syncProjectEvidenceHeight();
       syncMetricNotePointers();
       if (wormStage.classList.contains("is-zoomed")) computeWormGeometry();
       else requestWormLensRender();
@@ -3051,7 +3111,10 @@ document.addEventListener("visibilitychange", () => {
 });
 
 new ResizeObserver(() => queueViewportUpdate(0)).observe(document.body);
-document.fonts?.ready.then(() => queueViewportUpdate(2));
+document.fonts?.ready.then(() => {
+  evidenceSizingKey = "";
+  queueViewportUpdate(2);
+});
 
 hero.addEventListener("pointerenter", (event) => {
   if (event.pointerType === "touch") return;

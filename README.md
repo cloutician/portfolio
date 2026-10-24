@@ -45,9 +45,9 @@ The embedded demo includes:
 
 ![Touchline interface](docs/screenshots/touchline.png)
 
-### Switch (independent remake)
+### Switch (Remake)
 
-An in-progress recreation of Atomicom's Android arcade runner, targeting web and Android. The full game is roughly 60% complete; the portfolio's animated ship viewer is a preview of the wider remake, not its complete scope. Attempts to reverse-engineer a working version of the legacy build have not yet succeeded. Completion is targeted for late 2026, not promised as a release date.
+An in-progress recreation of Atomicom's Android arcade runner, targeting web and Android. The full game is roughly 85% complete; the portfolio's animated ship viewer is a preview of the wider remake, not its complete scope. Attempts to reverse-engineer a working version of the legacy build have not yet succeeded. Completion is targeted for late 2026, not promised as a release date.
 
 The portfolio includes a recreated rocket with its embedded ignition, thrust, shutdown and engine-off loop, fixed-magnification orbit controls, a gentle idle spin and a reset that rejoins that spin without rewinding it. The original-game screenshot is labelled separately as reference material. This is an independent project, not an official Atomicom release.
 
@@ -56,7 +56,7 @@ The portfolio includes a recreated rocket with its embedded ignition, thrust, sh
 Beyond the case studies, the site includes:
 
 - A custom project index with keyboard, pointer and stylus interactions.
-- A Three.js viewer for the queued-project 3D model.
+- A shared Three.js viewer with independent Switch-rocket and queued-project cat configurations.
 - Responsive layouts for desktop, tablet and narrow mobile screens.
 - A service worker and deliberate asset caching strategy.
 - Reduced-motion and accessibility-aware interaction states.
@@ -81,6 +81,7 @@ Beyond the case studies, the site includes:
 ├── index.html                 # Page structure and project presentation
 ├── styles.css                # Responsive layout, visual system and motion
 ├── script.js                 # Portfolio interactions and embedded demos
+├── model-viewer.js           # Shared, model-neutral 3D project viewer
 ├── worm-lens-webgl.js        # WebGL2 comparison-lens renderer
 ├── worker/                    # Cloudflare Worker entry point
 ├── public/
