@@ -43,4 +43,4 @@ for (const image of images) {
   }
 }
 
-console.log(`Generated ${images.length * variants.length} responsive Worm Profiler images.`);
+console.log(`Generated ${images.length * variants.length} responsive WormProfiler images.`);

@@ -8,14 +8,14 @@ The portfolio is predominantly a client-rendered, single-page experience:
 
 1. `index.html` supplies the semantic page and initial project state.
 2. `styles.css` owns the visual system, responsive layouts and interaction transitions.
-3. `script.js` coordinates project selection, Worm Profiler, Touchline, the 3D placeholder and input-specific behaviour.
-4. `worm-lens-webgl.js` renders the Worm Profiler magnifying lens through WebGL2 when the browser supports it.
+3. `script.js` coordinates project selection, WormProfiler, Touchline, the 3D placeholder and input-specific behaviour.
+4. `worm-lens-webgl.js` renders the WormProfiler magnifying lens through WebGL2 when the browser supports it.
 5. `public/streamline-sw.js` supports the site's asset-caching strategy.
 6. Vite builds the client assets and Cloudflare Worker bundle for deployment.
 
 `public/hero-intro.js` starts the existing hero entrance independently of the project module. Space Grotesk and Space Mono are served as local WOFF2 files; only the primary variable font is preloaded. Lens maps and project preparation wait until the project stage approaches the viewport and the first hero frames and font requests have completed. A user interaction can prepare a demo immediately.
 
-## Worm Profiler presentation
+## WormProfiler presentation
 
 The browser demo deliberately separates source preparation from runtime delivery.
 
@@ -40,11 +40,17 @@ Touchline is represented as a bounded browser demo rather than the complete deve
 
 The public source therefore documents the interface and playback system but does not contain the SoccerNet-derived footage required to reproduce the complete visual demo.
 
-## 3D placeholder
+## Switch and the 3D project previews
 
-The queued-project placeholder uses Three.js and `OrbitControls` to display a GLB model with constrained camera movement and a reproducible reset position.
+Switch (slot 03) and the queued project (slot 04) use `placeholder-viewer.js`, Three.js and `OrbitControls`. Switch has a dedicated case-study panel with a labelled original-game reference screenshot and a scoped warm orange/red/yellow theme; the remaining placeholder retains the cat. Per-slot configuration supplies the asset, animation, camera and accessible copy. One renderer caches the two models and their independent mixers. Selection tokens prevent a late asset load from replacing the currently requested model. The old `#project-placeholder-03` fragment remains an alias for `#project-switch`.
+
+The rocket repeats its embedded `Thruster_Cycle` animation (6.4 seconds). Its orbit pivot is centred on the solid rocket housing, not the exhaust. The fixed default view is magnified 3× relative to the initial full-cycle framing. A rocket-only render surface spans the project pane, with an off-axis projection that preserves the body position and scale. Rendering never adjusts camera distance during rotation; neither model supports wheel or pinch zoom. The cat keeps its agreed camera angle with 10% greater optical magnification. Camera reset restores each fixed view without restarting its animation. The exported rocket body orientation is unchanged. Reduced-motion mode presents a still frame and renders only while the camera is changing.
 
 An IntersectionObserver pauses its render loop outside the viewport. Returning resumes the existing mixer, camera and controls; it does not run the project-selection reset. Touchline similarly preserves elapsed playback time while off-screen or in a hidden browser tab.
+
+The rocket auto-orbits gently at one revolution per two minutes, using elapsed time rather than display frame count. Manual dragging takes priority; reduced-motion mode disables the auto-orbit. The cat's existing animation is unchanged.
+
+The models' Reset button follows a 220 ms eased, shortest-angle orbit, preserving fixed magnification and animation playback. The rocket has an independent idle-spin phase that advances even during manual orbiting: Reset rejoins the moving pose it would have reached without user rotation, rather than rewinding to the starting angle. The cat returns to its fixed default view. A new drag interrupts the return; reduced-motion mode resets immediately.
 
 ## Deployment
 
@@ -63,7 +69,7 @@ The production website is available at [onyemenam.dev](https://onyemenam.dev).
 
 Scroll and resize updates share one animation-frame queue for header progress, active navigation and responsive layout work. The progress indicator uses a transform rather than a changing width. The ambient canvas loop stops when none of its surfaces are visible.
 
-Stable source-image rectangles are cached relative to the Worm Profiler stage. Each lens draw still reads the stage's actual position, including sticky positioning. Zooms, resets, incoming images and swipes invalidate or bypass the cache and continue measuring the interpolated transforms. Shader code, texture-resolution limits, source-image files and interaction timings are unchanged.
+Stable source-image rectangles are cached relative to the WormProfiler stage. Each lens draw still reads the stage's actual position, including sticky positioning. Zooms, resets, incoming images and swipes invalidate or bypass the cache and continue measuring the interpolated transforms. Shader code, texture-resolution limits, source-image files and interaction timings are unchanged.
 
 ### Asset caching
 

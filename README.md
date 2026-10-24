@@ -2,7 +2,7 @@
 
 The source for [onyemenam.dev](https://onyemenam.dev), my interactive portfolio as an ML engineer and software developer.
 
-The site presents two ongoing areas of work: scientific-imaging software for planarian research and a football-vision system for player tracking and pitch reconstruction. The portfolio itself is also an engineering project, with responsive interactive demos, stylus-aware controls, progressive asset loading, WebGL rendering and a lightweight Cloudflare deployment.
+The site presents scientific-imaging software for planarian research, a football-vision system for player tracking and pitch reconstruction, and an independent remake of Atomicom's Switch for web and Android. The portfolio itself is also an engineering project, with responsive interactive demos, stylus-aware controls, progressive asset loading, WebGL rendering and a lightweight Cloudflare deployment.
 
 ![Portfolio overview](docs/screenshots/portfolio-overview.png)
 
@@ -13,9 +13,9 @@ The site presents two ongoing areas of work: scientific-imaging software for pla
 
 ## Selected work
 
-### Worm Profiler
+### WormProfiler
 
-Worm Profiler is an end-to-end imaging pipeline for cross-strain *Schmidtea polychroa* transplantation experiments. It prepares 26 MP camera captures for efficient processing in Ilastik, separates donor tissue, host tissue, eyes and background, validates donor masks against hand-drawn ground truth, and turns longitudinal images into reproducible morphometric measurements.
+WormProfiler is an end-to-end imaging pipeline for cross-strain *Schmidtea polychroa* transplantation experiments. It prepares 26 MP camera captures for efficient processing in Ilastik, separates donor tissue, host tissue, eyes and background, validates donor masks against hand-drawn ground truth, and turns longitudinal images into reproducible morphometric measurements.
 
 The embedded case-study interface includes:
 
@@ -25,9 +25,9 @@ The embedded case-study interface includes:
 - Frame-to-frame navigation that preserves the active comparison state.
 - Segmentation-class context, project outputs and experimental limitations.
 
-![Worm Profiler interface](docs/screenshots/worm-profiler.png)
+![WormProfiler interface](docs/screenshots/worm-profiler.png)
 
-![Worm Profiler camera image and segmentation slider](docs/screenshots/worm-profiler-slider.gif)
+![WormProfiler camera image and segmentation slider](docs/screenshots/worm-profiler-slider.gif)
 
 ### Touchline (demo)
 
@@ -44,6 +44,13 @@ The embedded demo includes:
 - A compact mobile layout that retains the desktop interaction model.
 
 ![Touchline interface](docs/screenshots/touchline.png)
+
+### Switch (independent remake)
+
+An in-progress recreation of Atomicom's Android arcade runner, targeting web and Android. The full game is roughly 60% complete; the portfolio's animated ship viewer is a preview of the wider remake, not its complete scope. Attempts to reverse-engineer a working version of the legacy build have not yet succeeded. Completion is targeted for late 2026, not promised as a release date.
+
+The portfolio includes a recreated rocket with its embedded ignition, thrust, shutdown and engine-off loop, fixed-magnification orbit controls, a gentle idle spin and a reset that rejoins that spin without rewinding it. The original-game screenshot is labelled separately as reference material. This is an independent project, not an official Atomicom release.
+
 ## Portfolio engineering
 
 Beyond the case studies, the site includes:
@@ -118,11 +125,11 @@ npm run preview
 
 ## Asset and data note
 
-This repository contains optimized Worm Profiler demonstration media, but excludes the original high-resolution camera captures used to produce those derivatives. It also excludes the SoccerNet-derived Touchline frame sequence. Third-party marks and the placeholder 3D model remain subject to their respective owners' terms. See [ATTRIBUTIONS.md](ATTRIBUTIONS.md) before reusing any asset.
+This repository contains optimized WormProfiler demonstration media, but excludes the original high-resolution camera captures used to produce those derivatives. It also excludes the SoccerNet-derived Touchline frame sequence. Third-party marks and the placeholder 3D model remain subject to their respective owners' terms. See [ATTRIBUTIONS.md](ATTRIBUTIONS.md) before reusing any asset.
 
 ## Status
 
-The portfolio is actively maintained. Worm Profiler is presented as a completed research-software pipeline, while Touchline is explicitly presented as a developing browser demo rather than a finished production system.
+The portfolio is actively maintained. WormProfiler is presented as a completed research-software pipeline, while Touchline is explicitly presented as a developing browser demo rather than a finished production system.
 
 ## Contact
 
@@ -135,4 +142,4 @@ The portfolio is actively maintained. Worm Profiler is presented as a completed 
 
 Copyright © 2026 George Onyemenam. All rights reserved.
 
-The source code is publicly available for portfolio review and technical evaluation, but no general licence is granted to use, modify, redistribute, publish, sublicense or sell it. Worm Profiler camera-image derivatives and segmentation outputs are provided for demonstration only and are excluded from any software licence. Third-party assets remain governed by their respective owners' licences and terms. See [ATTRIBUTIONS.md](ATTRIBUTIONS.md) for the asset-specific details and remaining verification items.
+The source code is publicly available for portfolio review and technical evaluation, but no general licence is granted to use, modify, redistribute, publish, sublicense or sell it. WormProfiler camera-image derivatives and segmentation outputs are provided for demonstration only and are excluded from any software licence. Third-party assets remain governed by their respective owners' licences and terms. See [ATTRIBUTIONS.md](ATTRIBUTIONS.md) for the asset-specific details and remaining verification items.

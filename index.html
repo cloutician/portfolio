@@ -53,7 +53,7 @@
             <span class="hero-surname">Onyemenam</span>
           </h1>
           <p class="hero-intro">
-            I build software that finds useful information in images. Worm Profiler turns
+            I build software that finds useful information in images. WormProfiler turns
             planarian camera captures into measurements. Touchline tracks football players and
             maps broadcast footage onto a pitch. I also build mobile apps and
             <span class="hero-accent">cloud infrastructure</span>, and occasionally take apart Android games
@@ -86,16 +86,16 @@
             <video id="project-video" muted loop playsinline preload="metadata" hidden></video>
             <div class="project-placeholder-stage" id="project-placeholder" hidden>
               <span class="placeholder-slot-number" aria-hidden="true">03</span>
-              <button class="worm-reset placeholder-camera-reset" id="oiia-cat-reset" type="button" aria-label="Reset 3D model camera angle" hidden>Reset</button>
-              <p class="placeholder-status"><i aria-hidden="true"></i> Upload queue</p>
+              <button class="worm-reset placeholder-camera-reset" id="placeholder-model-reset" type="button" aria-label="Reset 3D model camera angle" hidden>Reset</button>
+              <p class="placeholder-status"><i aria-hidden="true"></i><span id="placeholder-status-label">Upload queue</span></p>
               <div class="placeholder-card">
                 <figure class="placeholder-cat-frame">
-                  <canvas id="oiia-cat-canvas" aria-label="Interactive 3D model of the OIIAIOOO spinning cat. Drag to orbit and scroll or pinch to zoom."></canvas>
-                  <p class="placeholder-cat-loading" id="oiia-cat-loading" role="status">Loading 3D cat&hellip;</p>
+                  <canvas id="placeholder-model-canvas" aria-label="Interactive 3D project preview. Drag to orbit. Magnification is fixed."></canvas>
+                  <p class="placeholder-cat-loading" id="placeholder-model-loading" role="status">Loading 3D preview&hellip;</p>
                 </figure>
                 <div class="placeholder-copy">
-                  <h3>More projects soon.</h3>
-                  <p>Two case studies are still being prepared. Rotate the cat while you wait.</p>
+                  <h3 id="placeholder-heading">More projects soon.</h3>
+                  <p id="placeholder-description">More projects are being prepared.</p>
                 </div>
               </div>
             </div>
@@ -429,7 +429,7 @@
             </div>
             <div class="stage-caption">
               <span id="stage-number">01</span>
-              <strong id="stage-title">Worm Profiler</strong>
+              <strong id="stage-title">WormProfiler</strong>
               <span id="stage-type">ilastik</span>
             </div>
           </aside>
@@ -439,9 +439,13 @@
           <div class="evidence-intro">
             <p class="evidence-eyebrow" id="evidence-eyebrow">01 / Chimeric planarian analysis / ilastik</p>
             <h3 id="evidence-title">Following donor tissue through a living planarian chimera.</h3>
-            <p id="evidence-summary">Worm Profiler is an end-to-end imaging pipeline for cross-strain Schmidtea polychroa transplantation experiments. It crops each 26 MP capture to the worm region so Ilastik can process it efficiently, uses pigmentation contrast to separate donor tissue, host tissue, eyes, and background, validates donor masks against hand-drawn ground truth, then measures graft area, position, shape, confidence, and change over time.</p>
+            <p id="evidence-summary">WormProfiler is an end-to-end imaging pipeline for cross-strain Schmidtea polychroa transplantation experiments. It crops each 26 MP capture to the worm region so Ilastik can process it efficiently, uses pigmentation contrast to separate donor tissue, host tissue, eyes, and background, validates donor masks against hand-drawn ground truth, then measures graft area, position, shape, confidence, and change over time.</p>
           </div>
           <dl class="evidence-metrics" id="evidence-metrics" aria-label="Project evidence"></dl>
+          <figure class="evidence-media" id="evidence-media" hidden>
+            <img id="evidence-image" width="667" height="400" loading="lazy" decoding="async" alt="">
+            <figcaption id="evidence-caption"></figcaption>
+          </figure>
           <ol class="evidence-pipeline" id="evidence-pipeline" aria-label="Project pipeline"></ol>
           <div class="evidence-status" id="evidence-status"></div>
         </article>

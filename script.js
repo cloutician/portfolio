@@ -3,7 +3,7 @@ import { createWormLensWebGLRenderer } from "./worm-lens-webgl.js";
 const projects = [
   {
     slug: "worm-profiler",
-    title: "Worm Profiler",
+    title: "WormProfiler",
     type: "ilastik",
     year: "2026",
     demo: "",
@@ -14,7 +14,7 @@ const projects = [
     evidence: {
       eyebrow: "01 / Chimeric planarian analysis / ilastik",
       title: "Following donor tissue through a living planarian chimera.",
-      summary: "Worm Profiler is an end-to-end imaging pipeline for cross-strain Schmidtea polychroa transplantation experiments. It crops each 26 MP capture to the worm region so Ilastik can process it efficiently, uses pigmentation contrast to separate donor tissue, host tissue, eyes, and background, validates donor masks against hand-drawn ground truth, then measures graft area, position, shape, confidence, and change over time.",
+      summary: "WormProfiler is an end-to-end imaging pipeline for cross-strain Schmidtea polychroa transplantation experiments. It crops each 26 MP capture to the worm region so Ilastik can process it efficiently, uses pigmentation contrast to separate donor tissue, host tissue, eyes, and background, validates donor masks against hand-drawn ground truth, then measures graft area, position, shape, confidence, and change over time.",
       metrics: [
         ["266", "Source images"],
         ["26 MP", "Per image"],
@@ -71,17 +71,39 @@ const projects = [
     },
   },
   {
-    slug: "placeholder-03",
-    title: "More projects soon",
-    previewTitle: "More projects soon",
-    type: "Upload queue",
-    year: "Soon",
+    slug: "switch",
+    title: "Switch",
+    previewTitle: "Switch (Remake)",
+    type: "Game remake",
+    year: "2026",
     demo: "",
     scene: 2,
     interactive: "placeholder",
-    placeholder: true,
-    desc: "A new case study is being prepared. The cat is holding this slot for now.",
-    tags: ["3D model", "In progress"],
+    model: "rocket",
+    desc: "Recreating Atomicom’s arcade runner for web and Android.",
+    tags: ["Web + Android", "3D", "Game remake"],
+    evidence: {
+      eyebrow: "03 / Switch / Independent remake / In development",
+      title: "Recreating Switch for web and Android.",
+      summary: "I’m recreating Atomicom’s Switch for web and Android. The full game is roughly 60% complete; the animated ship shown here is an interactive preview of that wider remake.",
+      metrics: [],
+      media: {
+        src: "/assets/switch/original-game.webp",
+        alt: "The original Switch game: a white and red ship racing along orange and yellow lanes, with blue barriers against a starfield.",
+        caption: "Original Switch / Atomicom. Reference screenshot, not footage of my remake.",
+      },
+      pipelineLabel: "Switch project overview",
+      pipeline: [
+        ["Switch", "Original game by Atomicom"],
+        ["Web + Android", "Target platforms"],
+        ["~60%", "Full-game completion (estimate)"],
+        ["2026", "Year-end completion target"],
+      ],
+      status: [
+        ["Why rebuild", "Legacy native-library issues stop the original running on my newer Android devices. Reverse engineering remains an open avenue, but the remake is how I’m moving the project forward."],
+        ["Current build", "Development is ongoing on the full game, with roughly 60% of the remake complete. I’m aiming to finish before the end of 2026."],
+      ],
+    },
   },
   {
     slug: "placeholder-04",
@@ -93,10 +115,47 @@ const projects = [
     scene: 3,
     interactive: "placeholder",
     placeholder: true,
+    model: "cat",
     desc: "A new case study is being prepared. The cat is holding this slot for now.",
     tags: ["3D model", "In progress"],
   },
 ];
+
+const placeholderModels = {
+  rocket: {
+    key: "rocket",
+    url: "/assets/placeholders/switch-rocket-thrust-cycle.glb",
+    animation: "Thruster_Cycle",
+    fitAnimation: true,
+    orbitAnchor: "Folded_Grey_Housing",
+    defaultZoom: 3,
+    expandViewport: true,
+    autoRotateSpeed: 0.5,
+    cameraDirection: [1.5, 1.55, -1.4],
+    exposure: 0.9,
+    reducedTime: 1.6,
+    label: "Interactive 3D Switch rocket with an ignition, thrust, shutdown and engine-off cycle. Drag to orbit. Magnification is fixed.",
+    loading: "Loading Switch rocket…",
+    error: "The Switch rocket could not be loaded.",
+    heading: "Switch.",
+    status: "Independent remake",
+    description: "My recreation of Atomicom’s arcade runner for web and Android. The full game is roughly 60% complete.",
+    resetLabel: "Reset Switch rocket camera angle",
+  },
+  cat: {
+    key: "cat",
+    url: "/assets/placeholders/oiia-cat.glb",
+    defaultZoom: 1.1,
+    entryHold: 1000,
+    label: "Interactive 3D model of the OIIAIOOO spinning cat. Drag to orbit. Magnification is fixed.",
+    loading: "Loading 3D cat…",
+    error: "3D cat could not be loaded.",
+    heading: "More projects soon.",
+    status: "Upload queue",
+    description: "Another project is on the way. Rotate the cat while you wait.",
+    resetLabel: "Reset 3D model camera angle",
+  },
+};
 
 const header = document.querySelector("[data-header]");
 const projectIndex = document.querySelector("#project-index");
@@ -111,6 +170,9 @@ const evidenceSummary = document.querySelector("#evidence-summary");
 const evidenceMetrics = document.querySelector("#evidence-metrics");
 const evidencePipeline = document.querySelector("#evidence-pipeline");
 const evidenceStatus = document.querySelector("#evidence-status");
+const evidenceMedia = document.querySelector("#evidence-media");
+const evidenceImage = document.querySelector("#evidence-image");
+const evidenceCaption = document.querySelector("#evidence-caption");
 let wormStage = document.querySelector("#worm-stage");
 let wormMedia = document.querySelector("#worm-media");
 let wormZoomTrigger = document.querySelector("#worm-zoom-trigger");
@@ -134,9 +196,12 @@ const projectStage = document.querySelector(".project-stage");
 const projectCanvas = document.querySelector("#project-canvas");
 const projectPlaceholder = document.querySelector("#project-placeholder");
 const placeholderSlotNumber = document.querySelector(".placeholder-slot-number");
-const oiiaCatCanvas = document.querySelector("#oiia-cat-canvas");
-const oiiaCatLoading = document.querySelector("#oiia-cat-loading");
-const oiiaCatReset = document.querySelector("#oiia-cat-reset");
+const placeholderCanvas = document.querySelector("#placeholder-model-canvas");
+const placeholderLoading = document.querySelector("#placeholder-model-loading");
+const placeholderReset = document.querySelector("#placeholder-model-reset");
+const placeholderDescription = document.querySelector("#placeholder-description");
+const placeholderHeading = document.querySelector("#placeholder-heading");
+const placeholderStatus = document.querySelector("#placeholder-status-label");
 const touchlineStage = document.querySelector("#touchline-stage-lite");
 const touchlineViewport = document.querySelector(".tl-lite-viewport");
 const touchlineMedia = document.querySelector(".tl-lite-media");
@@ -255,14 +320,9 @@ let touchlineScrubPointerId = null;
 let touchlineScrubFrame = 0;
 let touchlineScrubClientX = 0;
 let touchlineDataPromise = null;
-let oiiaCatViewerPromise = null;
-let oiiaCatRuntimePromise = null;
-let oiiaCatViewer = null;
-let oiiaCatAnimationFrame = 0;
-let oiiaCatPreviousTime = 0;
-let oiiaCatAnimationHoldUntil = 0;
-let oiiaCatResizeFrame = 0;
-const OIIA_CAT_ENTRY_HOLD_MS = 1000;
+let placeholderViewerPromise = null;
+let placeholderViewer = null;
+let placeholderSelection = 0;
 const touchlineFrameImageCache = new Map();
 const wormAssetCache = new Map();
 const wormSourceCache = new Map();
@@ -394,7 +454,7 @@ function loadDecodedWormAsset(url) {
       }
       resolve(image);
     };
-    image.onerror = () => reject(new Error(`Could not load Worm Profiler asset ${url}.`));
+    image.onerror = () => reject(new Error(`Could not load WormProfiler asset ${url}.`));
     image.src = url;
   });
 
@@ -419,7 +479,7 @@ function cacheWormSource(index) {
   const url = wormSourceUrl(index);
   const pendingSource = fetch(url, { cache: "force-cache" })
     .then(async (response) => {
-      if (!response.ok) throw new Error(`Could not cache Worm Profiler source ${url}.`);
+      if (!response.ok) throw new Error(`Could not cache WormProfiler source ${url}.`);
       await response.blob();
       return url;
     });
@@ -436,7 +496,7 @@ function cacheWormZoomSource(index) {
   const url = wormZoomSourceUrl(index);
   const pendingSource = fetch(url, { cache: "force-cache" })
     .then(async (response) => {
-      if (!response.ok) throw new Error(`Could not cache Worm Profiler zoom source ${url}.`);
+      if (!response.ok) throw new Error(`Could not cache WormProfiler zoom source ${url}.`);
       await response.blob();
       return url;
     });
@@ -1167,212 +1227,77 @@ function toggleTouchlinePlayback() {
   }).catch(() => stopTouchlinePlayback());
 }
 
-function resizeOiiiaCatViewer() {
-  if (!oiiaCatViewer || !oiiaCatCanvas || projectPlaceholder.hidden) return;
-  const width = Math.max(1, oiiaCatCanvas.clientWidth);
-  const height = Math.max(1, oiiaCatCanvas.clientHeight);
-  if (width <= 1 || height <= 1) return;
-  const pixelRatio = Math.min(window.devicePixelRatio || 1, 2);
-  oiiaCatViewer.renderer.setPixelRatio(pixelRatio);
-  oiiaCatViewer.renderer.setSize(width, height, false);
-  oiiaCatViewer.camera.aspect = width / height;
-  oiiaCatViewer.camera.updateProjectionMatrix();
+function loadPlaceholderViewer() {
+  if (!placeholderViewerPromise) {
+    placeholderViewerPromise = import("./placeholder-viewer.js").then(({ PlaceholderModelViewer }) => {
+      placeholderViewer = new PlaceholderModelViewer(placeholderCanvas, {
+        reducedMotion,
+        onInteract: () => {
+          if (!projectPlaceholder.hidden && placeholderViewer?.active) placeholderReset.hidden = false;
+        },
+      });
+      return placeholderViewer;
+    }).catch((error) => {
+      placeholderViewerPromise = null;
+      throw error;
+    });
+  }
+  return placeholderViewerPromise;
 }
 
-function renderOiiiaCat(time) {
-  if (!oiiaCatViewer || projectPlaceholder.hidden || !projectIsVisible || document.hidden) {
-    oiiaCatAnimationFrame = 0;
-    oiiaCatPreviousTime = 0;
-    return;
-  }
-
-  const delta = oiiaCatPreviousTime ? Math.min(0.05, (time - oiiaCatPreviousTime) / 1000) : 0;
-  oiiaCatPreviousTime = time;
-  if (!reducedMotion && time >= oiiaCatAnimationHoldUntil) {
-    oiiaCatViewer.mixer?.update(delta);
-  }
-  oiiaCatViewer.controls.update();
-  oiiaCatViewer.renderer.render(oiiaCatViewer.scene, oiiaCatViewer.camera);
-  oiiaCatAnimationFrame = requestAnimationFrame(renderOiiiaCat);
-}
-
-function restoreOiiiaCatView({ restartAnimation = false } = {}) {
-  if (!oiiaCatViewer) return;
-  const { camera, controls, defaultView, mixer, renderer, scene } = oiiaCatViewer;
-  const dampingEnabled = controls.enableDamping;
-  controls.enableDamping = false;
-  controls.reset();
-  camera.position.copy(defaultView.position);
-  camera.quaternion.copy(defaultView.quaternion);
-  camera.zoom = defaultView.zoom;
-  controls.target.copy(defaultView.target);
-  camera.updateProjectionMatrix();
-  controls.update();
-  controls.enableDamping = dampingEnabled;
-  if (restartAnimation) {
-    mixer?.setTime(0);
-    oiiaCatAnimationHoldUntil = performance.now() + OIIA_CAT_ENTRY_HOLD_MS;
-  }
-  oiiaCatPreviousTime = 0;
-  oiiaCatReset.hidden = true;
-  renderer.render(scene, camera);
-}
-
-function loadOiiiaCatRuntime() {
-  if (!oiiaCatRuntimePromise) {
-    oiiaCatRuntimePromise = Promise.all([
-      import("three"),
-      import("three/addons/loaders/GLTFLoader.js"),
-      import("three/addons/controls/OrbitControls.js"),
-    ]);
-  }
-  return oiiaCatRuntimePromise;
-}
-
-function startOiiiaCatViewer() {
-  if (oiiaCatViewer) {
-    restoreOiiiaCatView({ restartAnimation: true });
-    resizeOiiiaCatViewer();
-    if (projectIsVisible && !document.hidden && !oiiaCatAnimationFrame) {
-      oiiaCatAnimationFrame = requestAnimationFrame(renderOiiiaCat);
-    }
-    return Promise.resolve(oiiaCatViewer);
-  }
-
-  if (oiiaCatViewerPromise) return oiiaCatViewerPromise;
+async function startPlaceholderViewer(project) {
+  const config = placeholderModels[project.model];
+  const selection = ++placeholderSelection;
+  placeholderViewer?.cancelSelection();
+  placeholderCanvas.style.visibility = "hidden";
+  placeholderCanvas.setAttribute("aria-label", config.label);
+  placeholderReset.setAttribute("aria-label", config.resetLabel);
+  placeholderReset.hidden = true;
+  placeholderDescription.textContent = config.description;
+  placeholderHeading.textContent = config.heading;
+  placeholderStatus.textContent = config.status;
+  projectPlaceholder.dataset.model = config.key;
+  delete projectPlaceholder.dataset.loadedModel;
+  projectPlaceholder.classList.remove("is-ready");
   projectPlaceholder.classList.remove("is-error");
   projectPlaceholder.classList.add("is-loading");
-  oiiaCatLoading.hidden = false;
-  oiiaCatLoading.textContent = "Loading 3D cat…";
-
-  oiiaCatViewerPromise = loadOiiiaCatRuntime().then(([THREE, { GLTFLoader }, { OrbitControls }]) => new Promise((resolve, reject) => {
-    const renderer = new THREE.WebGLRenderer({
-      canvas: oiiaCatCanvas,
-      alpha: true,
-      antialias: true,
-      powerPreference: "high-performance",
-    });
-    renderer.outputColorSpace = THREE.SRGBColorSpace;
-    renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1;
-
-    const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(30, 1, 0.01, 100);
-    const hemisphere = new THREE.HemisphereLight(0xffffff, 0x242424, 2.6);
-    const keyLight = new THREE.DirectionalLight(0xffffff, 3.2);
-    const rimLight = new THREE.DirectionalLight(0xffffff, 1.6);
-    keyLight.position.set(2.5, 4, 3.5);
-    rimLight.position.set(-3, 1.5, -2);
-    scene.add(hemisphere, keyLight, rimLight);
-
-    new GLTFLoader().load(
-      "/assets/placeholders/oiia-cat.glb",
-      (gltf) => {
-        const model = gltf.scene;
-        scene.add(model);
-        model.updateMatrixWorld(true);
-
-        const bounds = new THREE.Box3().setFromObject(model);
-        const size = bounds.getSize(new THREE.Vector3());
-        const centre = bounds.getCenter(new THREE.Vector3());
-        const extent = Math.max(size.x, size.y, size.z, 0.1);
-        model.position.sub(centre);
-        const initialCamera = new THREE.Spherical().setFromVector3(
-          new THREE.Vector3(extent * 0.72, extent * 0.4, extent * 1.95),
-        );
-        initialCamera.radius *= 0.68;
-        initialCamera.theta += THREE.MathUtils.degToRad(-42);
-        initialCamera.phi += THREE.MathUtils.degToRad(7);
-        camera.position.setFromSpherical(initialCamera);
-        camera.near = extent / 100;
-        camera.far = extent * 20;
-        camera.lookAt(0, 0, 0);
-        camera.updateProjectionMatrix();
-
-        const controls = new OrbitControls(camera, renderer.domElement);
-        controls.enableDamping = true;
-        controls.dampingFactor = 0.075;
-        controls.enablePan = false;
-        controls.enableRotate = true;
-        controls.enableZoom = true;
-        controls.rotateSpeed = 0.72;
-        controls.zoomSpeed = 0.8;
-        controls.minDistance = extent * 1.2;
-        controls.maxDistance = extent * 2.9;
-        controls.minPolarAngle = 0.2;
-        controls.maxPolarAngle = Math.PI - 0.2;
-        controls.target.set(0, 0, 0);
-        controls.update();
-        controls.saveState();
-        controls.addEventListener("start", () => {
-          oiiaCatReset.hidden = false;
-        });
-
-        const clip = gltf.animations[0];
-        const mixer = clip ? new THREE.AnimationMixer(model) : null;
-        if (mixer) {
-          const action = mixer.clipAction(clip);
-          action.setLoop(THREE.LoopRepeat, Infinity);
-          action.play();
-        }
-
-        const defaultView = {
-          position: camera.position.clone(),
-          quaternion: camera.quaternion.clone(),
-          target: controls.target.clone(),
-          zoom: camera.zoom,
-        };
-        oiiaCatViewer = { renderer, scene, camera, mixer, controls, defaultView };
-        oiiaCatAnimationHoldUntil = performance.now() + OIIA_CAT_ENTRY_HOLD_MS;
-        new ResizeObserver(() => {
-          cancelAnimationFrame(oiiaCatResizeFrame);
-          oiiaCatResizeFrame = requestAnimationFrame(() => {
-            oiiaCatResizeFrame = 0;
-            resizeOiiiaCatViewer();
-          });
-        }).observe(oiiaCatCanvas);
-        resizeOiiiaCatViewer();
-        projectPlaceholder.classList.remove("is-loading");
-        projectPlaceholder.classList.add("is-ready");
-        oiiaCatLoading.hidden = true;
-        if (!projectPlaceholder.hidden && projectIsVisible && !document.hidden && !oiiaCatAnimationFrame) {
-          oiiaCatAnimationFrame = requestAnimationFrame(renderOiiiaCat);
-        }
-        resolve(oiiaCatViewer);
-      },
-      undefined,
-      reject,
-    );
-  })).catch((error) => {
-    oiiaCatViewerPromise = null;
+  placeholderLoading.hidden = false;
+  placeholderLoading.textContent = config.loading;
+  try {
+    const viewer = await loadPlaceholderViewer();
+    if (selection !== placeholderSelection || projectPlaceholder.hidden) return;
+    viewer.setVisible(projectIsVisible && !document.hidden);
+    const record = await viewer.select(config);
+    if (!record || selection !== placeholderSelection || projectPlaceholder.hidden) return;
+    projectPlaceholder.dataset.loadedModel = config.key;
+    projectPlaceholder.classList.remove("is-loading");
+    projectPlaceholder.classList.add("is-ready");
+    placeholderLoading.hidden = true;
+  } catch (error) {
+    if (selection !== placeholderSelection || projectPlaceholder.hidden) return;
     projectPlaceholder.classList.remove("is-loading");
     projectPlaceholder.classList.add("is-error");
-    oiiaCatLoading.textContent = "3D cat could not be loaded.";
+    placeholderLoading.textContent = config.error;
     throw error;
-  });
-
-  return oiiaCatViewerPromise;
+  }
 }
 
-function stopOiiiaCatViewer() {
-  cancelAnimationFrame(oiiaCatAnimationFrame);
-  oiiaCatAnimationFrame = 0;
-  oiiaCatPreviousTime = 0;
+function stopPlaceholderViewer() {
+  placeholderSelection++;
+  placeholderViewer?.cancelSelection();
+  placeholderViewer?.setVisible(false);
+  delete projectPlaceholder.dataset.loadedModel;
 }
 
 function syncProjectActivity() {
   const visible = projectIsVisible && !document.hidden;
+  placeholderViewer?.setVisible(visible && !projectPlaceholder.hidden);
   if (!visible) {
-    stopOiiiaCatViewer();
     suspendTouchlinePlayback();
     cancelAnimationFrame(wormLensRenderAnimationFrame);
     wormLensRenderAnimationFrame = 0;
     wormLensRenderUntil = 0;
   } else {
-    if (!projectPlaceholder.hidden && oiiaCatViewer && !oiiaCatAnimationFrame) {
-      oiiaCatPreviousTime = 0;
-      oiiaCatAnimationFrame = requestAnimationFrame(renderOiiiaCat);
-    }
     resumeTouchlinePlayback();
     if (!wormStage.hidden) {
       ensureWormReady().then(() => prewarmWormLensFrame(activeWormImage))
@@ -1388,8 +1313,9 @@ function syncProjectActivity() {
   requestAmbientRender();
 }
 
-oiiaCatReset.addEventListener("click", () => {
-  restoreOiiiaCatView();
+placeholderReset.addEventListener("click", () => {
+  placeholderViewer?.resetView({ animate: true });
+  placeholderReset.hidden = true;
 });
 
 function renderProjects() {
@@ -1401,8 +1327,9 @@ function renderProjects() {
           class="project-row${index === 0 ? " is-active" : ""}${project.placeholder ? " is-placeholder" : ""}"
           type="button"
           data-project-index="${index}"
+          data-project="${project.slug}"
           aria-pressed="${index === 0}"
-          aria-controls="${project.placeholder ? "project-stage" : "project-stage project-evidence"}"
+          aria-controls="${project.evidence ? "project-stage project-evidence" : "project-stage"}"
         >
           <span class="project-number">${padNumber(index)}</span>
           <span class="project-headline">
@@ -1450,6 +1377,18 @@ function renderProjectEvidence(project) {
   evidenceEyebrow.textContent = evidence.eyebrow;
   evidenceTitle.textContent = evidence.title;
   evidenceSummary.textContent = evidence.summary;
+  evidenceMetrics.hidden = !evidence.metrics.length;
+  evidenceMedia.hidden = !evidence.media;
+  evidencePipeline.setAttribute("aria-label", evidence.pipelineLabel || "Project pipeline");
+  if (evidence.media) {
+    if (evidenceImage.getAttribute("src") !== evidence.media.src) evidenceImage.src = evidence.media.src;
+    evidenceImage.alt = evidence.media.alt;
+    evidenceCaption.textContent = evidence.media.caption;
+  } else {
+    evidenceImage.removeAttribute("src");
+    evidenceImage.alt = "";
+    evidenceCaption.textContent = "";
+  }
   evidenceMetrics.replaceChildren(...evidence.metrics.map(([value, label, note], index) => {
     const item = document.createElement("div");
     const term = document.createElement("dt");
@@ -1534,7 +1473,8 @@ document.addEventListener("click", (event) => {
 function projectIndexFromHash() {
   const match = /^#project-(.+)$/.exec(window.location.hash);
   if (!match) return -1;
-  return projects.findIndex((project) => project.slug === match[1]);
+  const slug = match[1] === "placeholder-03" ? "switch" : match[1];
+  return projects.findIndex((project) => project.slug === slug);
 }
 
 function focusProjectPreview() {
@@ -1575,7 +1515,7 @@ function setActiveProject(index, { userInitiated = false, updateHistory = false 
 
   const previousProject = projects[activeProject];
   const isPlaceholder = project.interactive === "placeholder";
-  const isPlaceholderSlotSwitch = isPlaceholder && previousProject?.placeholder;
+  const isPlaceholderSlotSwitch = isPlaceholder && previousProject?.interactive === "placeholder";
   activeProject = index;
   projectIndex.querySelectorAll(".project-row").forEach((row, rowIndex) => {
     const isActive = rowIndex === index;
@@ -1586,6 +1526,7 @@ function setActiveProject(index, { userInitiated = false, updateHistory = false 
   stageNumber.textContent = padNumber(index);
   if (isPlaceholder) placeholderSlotNumber.textContent = padNumber(index);
   stageTitle.textContent = project.previewTitle || project.title;
+  projectStage.dataset.project = project.slug;
   stageType.textContent = project.type;
   renderProjectEvidence(project);
   if (updateHistory) {
@@ -1594,6 +1535,7 @@ function setActiveProject(index, { userInitiated = false, updateHistory = false 
   }
 
   if (isPlaceholderSlotSwitch) {
+    startPlaceholderViewer(project).catch((error) => console.warn(error));
     if (userInitiated) focusProjectPreview();
     return;
   }
@@ -1604,7 +1546,7 @@ function setActiveProject(index, { userInitiated = false, updateHistory = false 
   projectStage.classList.toggle("is-touchline", isTouchline);
   projectStage.classList.toggle("is-placeholder", isPlaceholder);
   if (!isTouchline) stopTouchlinePlayback();
-  if (!isPlaceholder) stopOiiiaCatViewer();
+  if (!isPlaceholder) stopPlaceholderViewer();
 
   if (project.interactive === "worm") {
     projectCanvas.hidden = true;
@@ -1627,7 +1569,7 @@ function setActiveProject(index, { userInitiated = false, updateHistory = false 
     projectCanvas.hidden = true;
     stageVideo.pause();
     stageVideo.hidden = true;
-    startOiiiaCatViewer().catch((error) => console.warn(error));
+    startPlaceholderViewer(project).catch((error) => console.warn(error));
     if (userInitiated) focusProjectPreview();
     return;
   }

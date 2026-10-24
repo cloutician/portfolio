@@ -4,9 +4,9 @@ This file separates the portfolio's source code from third-party media, marks an
 
 ## Original project material
 
-### Worm Profiler camera captures
+### WormProfiler camera captures
 
-- **Files distributed here:** Derived Worm Profiler media in `public/assets/demos/`
+- **Files distributed here:** Derived WormProfiler media in `public/assets/demos/`
 - **Original captures:** Retained locally and excluded from this repository
 - **Project:** Chimeric planarian imaging and morphometric analysis
 - **Creator/copyright holder:** To be confirmed before the repository is made public
@@ -15,17 +15,33 @@ This file separates the portfolio's source code from third-party media, marks an
 
 The original 26 MP camera captures are retained locally and are not distributed with this repository. The optimized presentation media is included for portfolio demonstration only and may not be reused or redistributed without written permission.
 
-#### Worm Profiler reuse terms
+#### WormProfiler reuse terms
 
 Copyright © 2026 George Onyemenam. All rights reserved.
 
-The Worm Profiler source code is published for portfolio review and technical evaluation. No licence is granted to use, modify, redistribute, publish, sublicense or sell the code, except for the limited viewing and forking rights provided by GitHub's Terms of Service.
+The WormProfiler source code is published for portfolio review and technical evaluation. No licence is granted to use, modify, redistribute, publish, sublicense or sell the code, except for the limited viewing and forking rights provided by GitHub's Terms of Service.
 
 The optimized camera-image derivatives, segmentation outputs and other research-derived media are provided for demonstration only. They are excluded from any software licence and may not be reused, redistributed, republished, used for model training or incorporated into another research or commercial project without written permission from the applicable rights holder.
 
 The original high-resolution camera captures are not included in this repository.
 
+### Switch rocket
+
+- **File:** `public/assets/placeholders/switch-rocket-thrust-cycle.glb`
+- **Source:** Corrected export supplied by George Onyemenam from the Switch Runner project
+- **Animation:** Embedded `Thruster_Cycle`, a 6.4-second ignition, thrust, shutdown and engine-off loop
+- **Changes:** The supplied GLB is retained byte-for-byte. The portfolio adds camera framing, lighting and playback controls; it does not alter the exported body orientation or pitch.
+- **Reuse:** No additional redistribution licence is granted by its inclusion in the portfolio.
+
 ## Third-party material
+
+### Switch reference screenshot
+
+- **File:** `public/assets/switch/original-game.webp`
+- **Original game:** Switch by Atomicom
+- **Source:** Reference image supplied by George Onyemenam; retained unchanged
+- **Presentation:** Clearly labelled as the original game, not footage of George's independent remake
+- **Rights:** Original game artwork and marks remain the property of their respective rights holders. No third-party reuse or redistribution licence is granted here, and the remake is not presented as an official or affiliated release.
 
 ### SoccerNet sequence
 
