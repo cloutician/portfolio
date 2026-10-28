@@ -1,4 +1,7 @@
 import { createWormLensWebGLRenderer } from "./worm-lens-webgl.js";
+import { PreviewAssetQueue, yieldPreviewWork, enqueuePreviewPreparation, createPreviewThumbnail } from "./preview-assets.js";
+
+const previewAssets = new PreviewAssetQueue();
 
 const projects = [
   {
@@ -79,7 +82,8 @@ const projects = [
     demo: "",
     scene: 2,
     interactive: "model",
-    model: "rocket",
+    model: "rocket-player",
+    models: ["rocket-player", "rocket-enemy"],
     desc: "Recreating Atomicom’s arcade runner for web and Android.",
     tags: ["Web + Android", "3D model", "Game remake"],
     evidence: {
@@ -121,27 +125,47 @@ const projects = [
   },
 ];
 
+const switchRocketSettings = {
+  swapGroup: "switch-rockets",
+  animation: "Thruster_Cycle",
+  fitAnimation: true,
+  orbitAnchor: "Folded_Grey_Housing",
+  defaultZoom: 3,
+  expandViewport: true,
+  autoRotateSpeed: 0.5,
+  fieldOfView: 32,
+  cameraDirection: [1.5, 1.55, -1.4],
+  presentationPitch: -7,
+  lighting: "switch-rockets",
+  exposure: 1.18,
+  reducedTime: 0,
+  heading: "Switch.",
+  status: "Independent remake",
+  description: "My recreation of Atomicom’s arcade runner for web and Android. The full game is roughly 85% complete.",
+};
+
 const modelConfigs = {
-  rocket: {
-    key: "rocket",
-    url: "/assets/switch/switch-rocket-thrust-cycle.glb",
-    animation: "Thruster_Cycle",
-    fitAnimation: true,
-    orbitAnchor: "Folded_Grey_Housing",
-    defaultZoom: 3,
-    expandViewport: true,
-    autoRotateSpeed: 0.5,
-    fieldOfView: 32,
-    cameraDirection: [1.5, 1.55, -1.4],
-    exposure: 0.9,
-    reducedTime: 1.6,
-    label: "Interactive 3D Switch rocket with an ignition, thrust, shutdown and engine-off cycle. Drag to orbit. Magnification is fixed.",
-    loading: "Loading Switch rocket…",
-    error: "The Switch rocket could not be loaded.",
-    heading: "Switch.",
-    status: "Independent remake",
-    description: "My recreation of Atomicom’s arcade runner for web and Android. The full game is roughly 85% complete.",
-    resetLabel: "Reset Switch rocket camera angle",
+  "rocket-player": {
+    ...switchRocketSettings,
+    key: "rocket-player",
+    variantLabel: "Player",
+    url: "/assets/switch/switch-player-rocket-2026-10-27.glb",
+    effects: { type: "player-panels", strength: 0.085, redScale: 0.8 },
+    label: "Interactive 3D Switch player rocket with an ignition, thrust, shutdown and engine-off cycle. Drag to orbit. Magnification is fixed.",
+    loading: "Loading player rocket…",
+    error: "The player rocket could not be loaded.",
+    resetLabel: "Reset player rocket camera angle",
+  },
+  "rocket-enemy": {
+    ...switchRocketSettings,
+    key: "rocket-enemy",
+    variantLabel: "Enemy",
+    url: "/assets/switch/switch-enemy-rocket-2026-10-27.glb",
+    effects: { type: "enemy-trim", strength: 0.055, radius: 0, threshold: 0.9 },
+    label: "Interactive 3D Switch enemy rocket with an ignition, thrust, shutdown and engine-off cycle. Drag to orbit. Magnification is fixed.",
+    loading: "Loading enemy rocket…",
+    error: "The enemy rocket could not be loaded.",
+    resetLabel: "Reset enemy rocket camera angle",
   },
   cat: {
     key: "cat",
@@ -169,6 +193,7 @@ const projectIndex = document.querySelector("#project-index");
 const stageNumber = document.querySelector("#stage-number");
 const stageTitle = document.querySelector("#stage-title");
 const stageType = document.querySelector("#stage-type");
+const stageCaption = document.querySelector(".stage-caption");
 const stageVideo = document.querySelector("#project-video");
 const projectEvidence = document.querySelector("#project-evidence");
 const evidenceMetrics = document.querySelector("#evidence-metrics");
@@ -202,6 +227,8 @@ const modelReset = document.querySelector("#model-camera-reset");
 const modelDescription = document.querySelector("#model-description");
 const modelHeading = document.querySelector("#model-heading");
 const modelStatus = document.querySelector("#model-status-label");
+const modelSwitch = document.querySelector("#model-switch");
+const selectedModelVariants = new Map();
 const touchlineStage = document.querySelector("#touchline-stage-lite");
 const touchlineViewport = document.querySelector(".tl-lite-viewport");
 const touchlineMedia = document.querySelector(".tl-lite-media");
@@ -320,10 +347,17 @@ let touchlineScrubPointerId = null;
 let touchlineScrubFrame = 0;
 let touchlineScrubClientX = 0;
 let touchlineDataPromise = null;
+let touchlineDemoPromise = null;
 let modelViewerPromise = null;
 let modelViewer = null;
 let modelSelection = 0;
+let previewWarmStarted = false;
+let previewApproached = false;
+let touchlineWarmPromise = null;
+let touchlineBulkPromise = null;
+const modelWarmJobs = new Map();
 const touchlineFrameImageCache = new Map();
+const touchlineThumbnailCache = new Map();
 const wormAssetCache = new Map();
 const wormSourceCache = new Map();
 const wormZoomSourceCache = new Map();
@@ -398,6 +432,7 @@ const wormCueAssets = [
 ];
 
 const STREAMLINE_CACHE_PREFIX = "george-portfolio-streamline-";
+let streamlineRegistrationPromise = null;
 
 function settleWithin(promise, timeout) {
   return Promise.race([
@@ -406,7 +441,14 @@ function settleWithin(promise, timeout) {
   ]);
 }
 
-async function registerStreamlineWorker() {
+function registerStreamlineWorker() {
+  return streamlineRegistrationPromise ||= setupStreamlineWorker().catch(error => {
+    streamlineRegistrationPromise = null;
+    throw error;
+  });
+}
+
+async function setupStreamlineWorker() {
   if (!("serviceWorker" in navigator)) return;
 
   const isLocalDevelopment = import.meta.env.DEV;
@@ -634,13 +676,11 @@ function prepareWormTransitionLayers(...layers) {
 function createWormRoiAnimation(corner, currentTime = 0) {
   if (!corner.animate || reducedMotion) return null;
 
-  const style = getComputedStyle(corner);
-  const lockX = style.getPropertyValue("--lock-x").trim() || "0px";
-  const lockY = style.getPropertyValue("--lock-y").trim() || "0px";
   const animation = corner.animate(
     [
       { transform: "translate(0, 0)", opacity: 0.72 },
-      { transform: `translate(${lockX}, ${lockY})`, opacity: 1, offset: 0.5 },
+      // Keep responsive lengths live without restarting the shared cue phase.
+      { transform: "translate(var(--lock-x, 0px), var(--lock-y, 0px))", opacity: 1, offset: 0.5 },
       { transform: "translate(0, 0)", opacity: 0.72 },
     ],
     {
@@ -749,7 +789,7 @@ function prepareIncomingWormStage(stage, index) {
   const crop = wormImages[index].crop;
   const stageWidth = stage.clientWidth;
   const stageHeight = stage.clientHeight;
-  const usableHeight = Math.max(1, stageHeight - 52);
+  const usableHeight = Math.max(1, stageHeight - stageCaption.getBoundingClientRect().height);
   const planeWidth = stageWidth * 1.125;
   const planeHeight = stageHeight;
   const planeLeft = stageWidth * -0.0625;
@@ -994,26 +1034,32 @@ function buildTouchlineMarkers(sample) {
   });
 }
 
-function loadTouchlineFrameImage(sample) {
+function touchlineFrameUrl(sample) { return `/assets/demos/touchline/${sample.image}`; }
+
+function loadTouchlineFrameImage(sample, { priority = "user" } = {}) {
   const cached = touchlineFrameImageCache.get(sample.image);
-  if (cached) return cached;
-  const pendingImage = new Promise((resolve, reject) => {
+  if (cached) {
+    previewAssets.promote(touchlineFrameUrl(sample), priority);
+    return cached.promise;
+  }
+  const entry = { objectUrl: null, released: false };
+  entry.promise = previewAssets.blob(touchlineFrameUrl(sample), { priority }).then(async blob => {
+    if (priority !== "user") await yieldPreviewWork();
+    if (entry.released) return null;
+    entry.objectUrl = URL.createObjectURL(blob);
     const image = new Image();
     image.decoding = "async";
-    image.onload = async () => {
-      try {
-        await image.decode();
-      } catch {
-        // A completed image is still safe to display when explicit decoding is unavailable.
-      }
-      resolve(image);
-    };
-    image.onerror = () => reject(new Error(`Could not load Touchline ${sample.image}.`));
-    image.src = `/assets/demos/touchline/${sample.image}`;
+    image.src = entry.objectUrl;
+    await image.decode();
+    if (entry.released) { URL.revokeObjectURL(entry.objectUrl); return null; }
+    return image;
+  }).catch(error => {
+    if (entry.objectUrl) URL.revokeObjectURL(entry.objectUrl);
+    if (touchlineFrameImageCache.get(sample.image) === entry) touchlineFrameImageCache.delete(sample.image);
+    throw error;
   });
-  touchlineFrameImageCache.set(sample.image, pendingImage);
-  pendingImage.catch(() => touchlineFrameImageCache.delete(sample.image));
-  return pendingImage;
+  touchlineFrameImageCache.set(sample.image, entry);
+  return entry.promise;
 }
 
 function pruneTouchlineFrameCache(centreIndex, radiusBefore = 4, radiusAfter = 12) {
@@ -1023,8 +1069,15 @@ function pruneTouchlineFrameCache(centreIndex, radiusBefore = 4, radiusAfter = 1
   const keep = new Set(
     touchlinePreview.frames.slice(first, last + 1).map((sample) => sample.image),
   );
-  touchlineFrameImageCache.forEach((_, key) => {
-    if (!keep.has(key)) touchlineFrameImageCache.delete(key);
+  const displayed = new Set(touchlineFrameLayers.map(layer => layer.querySelector("img").src));
+  touchlineFrameImageCache.forEach((entry, key) => {
+    if (keep.has(key) || displayed.has(entry.objectUrl)) return;
+    entry.released = true;
+    // A pending decoder revokes its URL after it finishes, never mid-decode.
+    entry.promise.then(() => {
+      if (entry.objectUrl) URL.revokeObjectURL(entry.objectUrl);
+    }).catch(() => {});
+    touchlineFrameImageCache.delete(key);
   });
 }
 
@@ -1034,11 +1087,12 @@ async function renderTouchlineFrame(index) {
   const request = ++touchlineRenderRequest;
   const sample = touchlinePreview.frames[targetIndex];
   touchlineRequestedFrameIndex = targetIndex;
+  pruneTouchlineFrameCache(targetIndex);
   updateTouchlineTimeline(targetIndex);
 
   try {
     const decodedImage = await loadTouchlineFrameImage(sample);
-    if (request !== touchlineRenderRequest) return false;
+    if (!decodedImage || request !== touchlineRenderRequest) return false;
 
     const nextLayerIndex = touchlineFrameLayers.length > 1 ? 1 - touchlineActiveLayerIndex : 0;
     const nextLayer = touchlineFrameLayers[nextLayerIndex];
@@ -1071,11 +1125,15 @@ async function renderTouchlineFrame(index) {
   }
 }
 
-function preloadTouchlineFrames(startIndex, count = 10) {
+function preloadTouchlineFrames(startIndex, count = 10, priority = "near") {
   if (!touchlinePreview?.frames) return Promise.resolve([]);
   const pendingFrames = touchlinePreview.frames
     .slice(startIndex, startIndex + count)
-    .map((sample) => loadTouchlineFrameImage(sample));
+    .filter(sample => {
+      const index = touchlinePreview.frames.indexOf(sample);
+      return index >= touchlineRequestedFrameIndex - 4 && index <= touchlineRequestedFrameIndex + 12;
+    })
+    .map((sample) => loadTouchlineFrameImage(sample, { priority }));
   return Promise.allSettled(pendingFrames);
 }
 
@@ -1086,18 +1144,32 @@ function formatTouchlineClock(seconds) {
   return `${String(minutes).padStart(2, "0")}:${remaining}`;
 }
 
+function touchlineFilmstripSamples() {
+  return Array.from({ length: 12 }, (_, index) => touchlinePreview.frames[
+    Math.round(index / 11 * (touchlinePreview.frames.length - 1))
+  ]);
+}
+
+function loadTouchlineThumbnail(sample, priority = "background") {
+  previewAssets.promote(touchlineFrameUrl(sample), priority);
+  if (!touchlineThumbnailCache.has(sample.image)) {
+    const thumbnail = previewAssets.blob(touchlineFrameUrl(sample), { priority })
+      .then(blob => enqueuePreviewPreparation(() => createPreviewThumbnail(blob)));
+    touchlineThumbnailCache.set(sample.image, thumbnail);
+    thumbnail.catch(() => touchlineThumbnailCache.delete(sample.image));
+  }
+  return touchlineThumbnailCache.get(sample.image);
+}
+
 function buildTouchlineFilmstrip() {
   if (!touchlinePreview?.frames?.length || touchlineFilmstrip.childElementCount) return;
-  const thumbnailCount = 12;
-  const thumbnails = Array.from({ length: thumbnailCount }, (_, thumbnailIndex) => {
-    const sampleIndex = Math.round((thumbnailIndex / (thumbnailCount - 1)) * (touchlinePreview.frames.length - 1));
-    const sample = touchlinePreview.frames[sampleIndex];
+  const thumbnails = touchlineFilmstripSamples().map(sample => {
     const frame = document.createElement("span");
     const image = document.createElement("img");
     const time = document.createElement("small");
-    image.src = `/assets/demos/touchline/${sample.image}`;
     image.alt = "";
     image.loading = "lazy";
+    loadTouchlineThumbnail(sample, "near").then(url => { image.src = url; }).catch(() => {});
     time.textContent = formatTouchlineClock(sample.frame / touchlinePreview.media.frame_rate).slice(0, 5);
     frame.append(image, time);
     return frame;
@@ -1105,20 +1177,30 @@ function buildTouchlineFilmstrip() {
   touchlineFilmstrip.replaceChildren(...thumbnails);
 }
 
-function ensureTouchlineData() {
-  if (window.TOUCHLINE_PREVIEW) return Promise.resolve(window.TOUCHLINE_PREVIEW);
-  if (touchlineDataPromise) return touchlineDataPromise;
+function ensureTouchlineData({ priority = "user" } = {}) {
+  if (window.TOUCHLINE_PREVIEW) {
+    touchlinePreview = window.TOUCHLINE_PREVIEW;
+    return Promise.resolve(touchlinePreview);
+  }
+  if (touchlineDataPromise) {
+    previewAssets.promote("touchline-data", priority);
+    return touchlineDataPromise;
+  }
 
-  touchlineDataPromise = new Promise((resolve, reject) => {
+  touchlineDataPromise = previewAssets.run("touchline-data", requestPriority => new Promise((resolve, reject) => {
     const script = document.createElement("script");
     script.src = "/assets/demos/touchline/preview-data.js?v=20260819-1";
     script.async = true;
+    script.fetchPriority = requestPriority === "user" ? "high" : "low";
     script.onload = () => {
       if (window.TOUCHLINE_PREVIEW) resolve(window.TOUCHLINE_PREVIEW);
       else reject(new Error("Touchline preview data loaded without a preview payload."));
     };
     script.onerror = () => reject(new Error("Touchline preview data is unavailable."));
     document.head.append(script);
+  }), { priority }).then(data => {
+    touchlinePreview = data;
+    return data;
   }).catch((error) => {
     touchlineDataPromise = null;
     throw error;
@@ -1127,17 +1209,16 @@ function ensureTouchlineData() {
   return touchlineDataPromise;
 }
 
-async function loadTouchlineDemo() {
-  if (touchlinePreview) {
-    buildTouchlineFilmstrip();
-    return touchlinePreview;
+function loadTouchlineDemo() {
+  if (!touchlineDemoPromise) {
+    touchlineDemoPromise = ensureTouchlineData().then(async () => {
+      buildTouchlineFilmstrip();
+      void preloadTouchlineFrames(touchlineRequestedFrameIndex, 10);
+      await renderTouchlineFrame(touchlineRequestedFrameIndex);
+      return touchlinePreview;
+    }).catch(error => { touchlineDemoPromise = null; throw error; });
   }
-
-  touchlinePreview = await ensureTouchlineData();
-  buildTouchlineFilmstrip();
-  preloadTouchlineFrames(touchlineRequestedFrameIndex, 10);
-  await renderTouchlineFrame(touchlineRequestedFrameIndex);
-  return touchlinePreview;
+  return touchlineDemoPromise;
 }
 
 function stopTouchlinePlayback() {
@@ -1227,11 +1308,14 @@ function toggleTouchlinePlayback() {
   }).catch(() => stopTouchlinePlayback());
 }
 
-function loadModelViewer() {
+function loadModelViewer({ priority = "user" } = {}) {
+  previewAssets.promote("model-viewer-module", priority);
   if (!modelViewerPromise) {
-    modelViewerPromise = import("./model-viewer.js").then(({ ProjectModelViewer }) => {
+    modelViewerPromise = previewAssets.run("model-viewer-module", () => import("./model-viewer.js"), { priority }).then(({ ProjectModelViewer }) => {
       modelViewer = new ProjectModelViewer(modelCanvas, {
         reducedMotion,
+        loadAsset: (url, background) => previewAssets.blob(url, { priority: background ? "background" : "user" }),
+        yieldWork: yieldPreviewWork,
         onInteract: () => {
           if (!projectModelStage.hidden && modelViewer?.active) modelReset.hidden = false;
         },
@@ -1245,31 +1329,47 @@ function loadModelViewer() {
   return modelViewerPromise;
 }
 
-async function startModelViewer(project) {
-  const config = modelConfigs[project.model];
+async function startModelViewer(project, { preserveState = false } = {}) {
+  const key = selectedModelVariants.get(project.slug) || project.model;
+  const config = modelConfigs[key];
+  const canSwitch = project.models?.length > 1;
+  modelSwitch.hidden = !canSwitch;
+  modelHeading.hidden = canSwitch;
+  if (canSwitch) {
+    const nextKey = project.models[(project.models.indexOf(key) + 1) % project.models.length];
+    modelSwitch.textContent = config.heading;
+    modelSwitch.setAttribute("aria-label", `Switch to ${modelConfigs[nextKey].variantLabel.toLowerCase()} rocket`);
+    modelSwitch.setAttribute("aria-pressed", String(key !== project.model));
+  }
+  const keepCurrent = !!(preserveState && config.swapGroup && modelViewer?.active?.config.swapGroup === config.swapGroup);
   const selection = ++modelSelection;
-  modelViewer?.cancelSelection();
-  modelCanvas.style.visibility = "hidden";
-  modelCanvas.setAttribute("aria-label", config.label);
-  modelReset.setAttribute("aria-label", config.resetLabel);
-  modelReset.hidden = true;
+  if (!keepCurrent) {
+    modelViewer?.cancelSelection();
+    modelCanvas.style.visibility = "hidden";
+    modelReset.hidden = true;
+    delete projectModelStage.dataset.loadedModel;
+    projectModelStage.classList.remove("is-ready");
+  }
+  modelSwitch.setAttribute("aria-busy", String(keepCurrent && modelViewer.active.config.key !== key));
   modelDescription.textContent = config.description;
   modelHeading.textContent = config.heading;
   modelStatus.textContent = config.status;
   projectModelStage.dataset.model = config.key;
-  delete projectModelStage.dataset.loadedModel;
-  projectModelStage.classList.remove("is-ready");
   projectModelStage.classList.remove("is-error");
   projectModelStage.classList.add("is-loading");
-  modelLoading.hidden = false;
+  modelLoading.hidden = keepCurrent;
   modelLoading.textContent = config.loading;
   try {
     const viewer = await loadModelViewer();
     if (selection !== modelSelection || projectModelStage.hidden) return;
     viewer.setVisible(projectIsVisible && !document.hidden);
-    const record = await viewer.select(config);
+    previewAssets.promote(config.url);
+    const record = await viewer.select(config, { preserveState: keepCurrent });
     if (!record || selection !== modelSelection || projectModelStage.hidden) return;
     projectModelStage.dataset.loadedModel = config.key;
+    modelCanvas.setAttribute("aria-label", config.label);
+    modelReset.setAttribute("aria-label", config.resetLabel);
+    modelSwitch.setAttribute("aria-busy", "false");
     projectModelStage.classList.remove("is-loading");
     projectModelStage.classList.add("is-ready");
     modelLoading.hidden = true;
@@ -1277,6 +1377,8 @@ async function startModelViewer(project) {
     if (selection !== modelSelection || projectModelStage.hidden) return;
     projectModelStage.classList.remove("is-loading");
     projectModelStage.classList.add("is-error");
+    modelSwitch.setAttribute("aria-busy", "false");
+    modelLoading.hidden = false;
     modelLoading.textContent = config.error;
     throw error;
   }
@@ -1313,10 +1415,104 @@ function syncProjectActivity() {
   requestAmbientRender();
 }
 
+function warmPreviewModel(key) {
+  if (modelWarmJobs.has(key)) return modelWarmJobs.get(key);
+  const config = modelConfigs[key];
+  const pending = previewAssets.blob(config.url, { priority: "background" })
+    .then(() => enqueuePreviewPreparation(async () => {
+      const viewer = await loadModelViewer({ priority: "near" });
+      return viewer.prepare(config);
+    }));
+  modelWarmJobs.set(key, pending);
+  pending.catch(() => modelWarmJobs.delete(key));
+  return pending;
+}
+
+function warmTouchlineOpening() {
+  if (touchlineWarmPromise) return touchlineWarmPromise;
+  touchlineWarmPromise = ensureTouchlineData({ priority: "background" }).then(async data => {
+    // Probe one frame first: the public GitHub checkout deliberately omits
+    // this footage. Do not fan out 150 failing requests in that checkout.
+    const index = touchlineRequestedFrameIndex;
+    await previewAssets.blob(touchlineFrameUrl(data.frames[index]), { priority: "background" });
+    await preloadTouchlineFrames(touchlineRequestedFrameIndex, 10, "background");
+    pruneTouchlineFrameCache(touchlineRequestedFrameIndex);
+    return data;
+  }).catch(error => { touchlineWarmPromise = null; throw error; });
+  return touchlineWarmPromise;
+}
+
+function warmAllPreviewAssets() {
+  if (!previewWarmStarted) return;
+  const modelJobs = ["rocket-player", "cat", "rocket-enemy"].map(warmPreviewModel);
+  if (!touchlineBulkPromise) {
+    touchlineBulkPromise = warmTouchlineOpening().then(data => {
+      const centre = touchlineRequestedFrameIndex;
+      const ordered = data.frames.map((sample, index) => ({ sample, distance: Math.abs(index - centre) }))
+        .sort((a, b) => a.distance - b.distance);
+      return Promise.allSettled([
+        ...ordered.map(({ sample }) => previewAssets.blob(touchlineFrameUrl(sample), { priority: "background" })),
+        ...touchlineFilmstripSamples().map(sample => loadTouchlineThumbnail(sample)),
+      ]);
+    });
+    touchlineBulkPromise.catch(() => { touchlineBulkPromise = null; });
+    Promise.allSettled([...modelJobs, touchlineBulkPromise]).then(results => {
+      if (results.every(result => result.status === "fulfilled")
+        && results.at(-1).value.every(result => result.status === "fulfilled")) {
+        performance.mark("portfolio-previews-ready");
+      }
+    });
+  } else void Promise.allSettled(modelJobs);
+}
+
+function startPreviewPreloading() {
+  if (previewWarmStarted) return;
+  previewWarmStarted = true;
+  performance.mark("portfolio-preview-preload-start");
+  previewAssets.startBackground();
+  if (!previewAssets.conserveData || previewApproached) warmAllPreviewAssets();
+  else {
+    // Honour explicit Data Saver/2G preferences until the visitor approaches
+    // the demos; still prepare the first frame and the small player rocket.
+    void Promise.allSettled([warmPreviewModel("rocket-player"), warmTouchlineOpening()]);
+  }
+}
+
 modelReset.addEventListener("click", () => {
   modelViewer?.resetView({ animate: true });
   modelReset.hidden = true;
 });
+
+modelSwitch.addEventListener("click", () => {
+  const project = projects[activeProject];
+  if (!project.models?.length) return;
+  const key = selectedModelVariants.get(project.slug) || project.model;
+  const nextKey = project.models[(project.models.indexOf(key) + 1) % project.models.length];
+  selectedModelVariants.set(project.slug, nextKey);
+  startModelViewer(project, { preserveState: true }).catch(error => console.warn(error));
+});
+
+// Touch browsers can retain CSS :hover after a tap. Use real pointer events
+// so fingers clear hover while mouse and pen hovering still works on hybrids.
+function bindPreviewButtonFeedback(button) {
+  for (const type of ["pointerenter", "pointermove", "pointerdown"]) {
+    button.addEventListener(type, event => {
+      button.classList.toggle("is-pointer-hover", event.pointerType === "mouse" || event.pointerType === "pen");
+      if (type === "pointerdown" && event.pointerType === "touch") button.classList.add("is-touch-pressed");
+    });
+  }
+  button.addEventListener("pointerleave", () => button.classList.remove("is-pointer-hover"));
+  button.addEventListener("pointercancel", () => button.classList.remove("is-pointer-hover"));
+  const clearPress = () => button.classList.remove("is-touch-pressed");
+  window.addEventListener("pointerup", clearPress, true);
+  window.addEventListener("pointercancel", clearPress, true);
+  window.addEventListener("blur", clearPress);
+  button.addEventListener("lostpointercapture", clearPress);
+  for (const type of ["selectstart", "contextmenu"]) {
+    button.addEventListener(type, event => event.preventDefault());
+  }
+}
+bindPreviewButtonFeedback(modelSwitch);
 
 function renderProjects() {
   projectIndex.classList.toggle("has-two-projects", projects.length === 2);
@@ -1665,7 +1861,7 @@ function computeWormGeometry() {
 
   const stageWidth = wormStage.clientWidth;
   const stageHeight = wormStage.clientHeight;
-  const usableHeight = Math.max(1, stageHeight - 52);
+  const usableHeight = Math.max(1, stageHeight - stageCaption.getBoundingClientRect().height);
   const planeWidth = stageWidth * 1.125;
   const planeHeight = stageHeight;
   const planeLeft = stageWidth * -0.0625;
@@ -3031,6 +3227,26 @@ const heroPainted = new Promise((resolve) => {
   else window.addEventListener("portfolio:hero-ready", afterPaint, { once: true });
 });
 heroPainted.then(requestAmbientRender);
+// Do not let the dynamically loaded annotation script extend the initial
+// document's load event. Neither model bytes nor demo data gate the hero.
+const openingLoaded = document.readyState === "complete" ? Promise.resolve()
+  : new Promise(resolve => window.addEventListener("load", resolve, { once: true }));
+Promise.all([heroPainted, document.fonts?.ready, openingLoaded]).then(async () => {
+  // Let the revision-aware cache take control first when it can do so quickly.
+  // This is background-only and bounded; it never holds the opening screen.
+  if (!import.meta.env.DEV) await settleWithin(registerStreamlineWorker().catch(() => {}), 750);
+  startPreviewPreloading();
+});
+
+if ("IntersectionObserver" in window) {
+  const previewApproachObserver = new IntersectionObserver(([entry], observer) => {
+    if (!entry.isIntersecting) return;
+    previewApproached = true;
+    if (previewAssets.conserveData) warmAllPreviewAssets();
+    observer.disconnect();
+  }, { rootMargin: previewAssets.conserveData ? "0px" : "300px 0px" });
+  previewApproachObserver.observe(projectStage);
+}
 
 const warmWormWhenApproached = () => {
   const warm = () => {
@@ -3212,14 +3428,7 @@ wormZoomTrigger.addEventListener("click", zoomWormView);
 wormReset.addEventListener("click", () => resetWormView({ waitForZoom: true }));
 wormPrevious.addEventListener("click", () => applyWormImage(activeWormImage - 1, -1));
 wormNext.addEventListener("click", () => applyWormImage(activeWormImage + 1, 1));
-[wormPrevious, wormNext].forEach((button) => {
-  button.addEventListener("pointerenter", (event) => {
-    if (event.pointerType === "pen") button.classList.add("is-pen-hover");
-  });
-  button.addEventListener("pointerleave", (event) => {
-    if (event.pointerType === "pen") button.classList.remove("is-pen-hover");
-  });
-});
+[wormPrevious, wormNext].forEach(bindPreviewButtonFeedback);
 
 function writeWormLensScale(node, value) {
   if (!node) return;

@@ -94,7 +94,7 @@
                   <p class="model-loading" id="model-loading" role="status">Loading 3D preview&hellip;</p>
                 </figure>
                 <div class="model-copy">
-                  <h3 id="model-heading">More projects soon.</h3>
+                  <h3><span id="model-heading">More projects soon.</span><button class="model-switch" id="model-switch" type="button" aria-controls="project-model-canvas" hidden>Switch.</button></h3>
                   <p id="model-description">More projects are being prepared.</p>
                 </div>
               </div>
@@ -122,7 +122,7 @@
                 <div class="tl-lite-viewport">
                   <div class="tl-lite-media">
                     <div class="tl-lite-frame-layer is-current" data-touchline-frame-layer>
-                      <img src="/assets/demos/touchline/frames/000396.webp" loading="lazy" fetchpriority="low" alt="SoccerNet football frame with Touchline player tracking overlay">
+                      <img alt="SoccerNet football frame with Touchline player tracking overlay">
                       <div class="tl-lite-tracks" aria-hidden="true"></div>
                     </div>
                     <div class="tl-lite-frame-layer" data-touchline-frame-layer aria-hidden="true">
@@ -423,9 +423,9 @@
             </div>
             <button class="viewer-reset" id="worm-reset" type="button" hidden>Reset</button>
             <div class="worm-sequence-nav" aria-label="Worm image navigation" hidden>
-              <button id="worm-previous" type="button" aria-label="Previous worm image" disabled>&larr;</button>
+              <button id="worm-previous" type="button" aria-label="Previous worm image" disabled><svg class="worm-nav-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M5 12h14m-5-5 5 5-5 5"/></svg></button>
               <span id="worm-sequence-count" aria-live="polite">01 / 06</span>
-              <button id="worm-next" type="button" aria-label="Next worm image" disabled>&rarr;</button>
+              <button id="worm-next" type="button" aria-label="Next worm image" disabled><svg class="worm-nav-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M5 12h14m-5-5 5 5-5 5"/></svg></button>
             </div>
             <div class="stage-caption">
               <span id="stage-number">01</span>

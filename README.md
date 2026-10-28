@@ -49,14 +49,14 @@ The embedded demo includes:
 
 An in-progress recreation of Atomicom's Android arcade runner, targeting web and Android. The full game is roughly 85% complete; the portfolio's animated ship viewer is a preview of the wider remake, not its complete scope. Attempts to reverse-engineer a working version of the legacy build have not yet succeeded. Completion is targeted for late 2026, not promised as a release date.
 
-The portfolio includes a recreated rocket with its embedded ignition, thrust, shutdown and engine-off loop, fixed-magnification orbit controls, a gentle idle spin and a reset that rejoins that spin without rewinding it. The original-game screenshot is labelled separately as reference material. This is an independent project, not an official Atomicom release.
+The portfolio includes player and enemy rockets, toggled by the interactive “Switch.” title without resetting the camera, idle spin or animation phase. Both contain embedded ignition, thrust, shutdown and engine-off loops, layered exhaust and animated embers. They retain their exported materials, with separate red-panel and white-trim glow treatments over a transparent canvas. Orbit controls use fixed magnification, a gentle idle spin and a reset that rejoins that spin without rewinding it. The original-game screenshot is labelled separately as reference material. This is an independent project, not an official Atomicom release.
 
 ## Portfolio engineering
 
 Beyond the case studies, the site includes:
 
 - A custom project index with keyboard, pointer and stylus interactions.
-- A shared Three.js viewer with independent Switch-rocket and queued-project cat configurations.
+- A shared Three.js viewer with independent player-rocket, enemy-rocket and queued-project cat configurations.
 - Responsive layouts for desktop, tablet and narrow mobile screens.
 - A service worker and deliberate asset caching strategy.
 - Reduced-motion and accessibility-aware interaction states.
@@ -82,6 +82,8 @@ Beyond the case studies, the site includes:
 ├── styles.css                # Responsive layout, visual system and motion
 ├── script.js                 # Portfolio interactions and embedded demos
 ├── model-viewer.js           # Shared, model-neutral 3D project viewer
+├── preview-assets.js         # Prioritized background loading and idle preparation
+├── rocket-effects.js         # Transparent rocket-specific halo/bloom rendering
 ├── worm-lens-webgl.js        # WebGL2 comparison-lens renderer
 ├── worker/                    # Cloudflare Worker entry point
 ├── public/
@@ -94,6 +96,8 @@ Beyond the case studies, the site includes:
 More implementation detail is available in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 ## Running locally
+
+Project demos prepare progressively after the opening screen has rendered, rather than waiting for a project click. The models are prepared offscreen and remain paused; Touchline caches compressed frame files while decoding only a nearby working set. Main preview image quality is unchanged. Data Saver/2G connections use a smaller initial warm-up until the projects are approached. See [Architecture](docs/ARCHITECTURE.md) for details.
 
 ### Requirements
 
@@ -123,6 +127,8 @@ Then open the network address displayed by Vite on the other device.
 npm run build
 npm run preview
 ```
+
+Run the dependency-free queue tests with `npm test`.
 
 ## Asset and data note
 

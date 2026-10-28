@@ -25,12 +25,12 @@ The optimized camera-image derivatives, segmentation outputs and other research-
 
 The original high-resolution camera captures are not included in this repository.
 
-### Switch rocket
+### Switch player and enemy rockets
 
-- **File:** `public/assets/switch/switch-rocket-thrust-cycle.glb`
-- **Source:** Corrected export supplied by George Onyemenam from the Switch Runner project
+- **Files:** `public/assets/switch/switch-player-rocket-2026-10-27.glb` and `public/assets/switch/switch-enemy-rocket-2026-10-27.glb`
+- **Source:** Validated exports supplied by George Onyemenam from the Switch Runner project, 27 October 2026
 - **Animation:** Embedded `Thruster_Cycle`, a 6.4-second ignition, thrust, shutdown and engine-off loop
-- **Changes:** The supplied GLB is retained byte-for-byte. The portfolio adds camera framing, lighting and playback controls; it does not alter the exported body orientation or pitch.
+- **Changes:** Both supplied GLBs are retained byte-for-byte. The portfolio adds camera framing, a seven-degree presentation wrapper, lighting, playback controls and rocket-specific glow. Exported geometry and material values are not rewritten. The player's shader colour correction and restrained panel halo follow the project's `rocket-panel-glow.js` reference; the enemy's white bloom uses the reference inspector settings.
 - **Reuse:** No additional redistribution licence is granted by its inclusion in the portfolio.
 
 ## Third-party material

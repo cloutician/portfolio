@@ -1,12 +1,16 @@
 import * as THREE from "three";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+import { createRocketEffects } from "./rocket-effects.js";
 
 // One canvas/renderer, independent cached models and mixers. Selection is the only
 // operation allowed to mount a loaded model, so late loads cannot replace it.
 export class ProjectModelViewer {
-  constructor(canvas, { reducedMotion = false, onInteract = () => {} } = {}) {
+  constructor(canvas, { reducedMotion = false, onInteract = () => {}, loadAsset = null, yieldWork = () => Promise.resolve() } = {}) {
     this.canvas = canvas;
+    this.loadAsset = loadAsset;
+    this.yieldWork = yieldWork;
+    this.preparing = new Map();
     this.reducedMotion = reducedMotion;
     this.records = new Map();
     this.selection = 0;
@@ -39,7 +43,16 @@ export class ProjectModelViewer {
     const rim = new THREE.DirectionalLight(0xffffff, 1.6);
     key.position.set(2.5, 4, 3.5);
     rim.position.set(-3, 1.5, -2);
-    this.scene.add(hemisphere, key, rim);
+    this.defaultLighting = new THREE.Group();
+    this.defaultLighting.add(hemisphere, key, rim);
+    this.rocketLighting = new THREE.Group();
+    const rocketKey = new THREE.DirectionalLight(0xffe0b8, 3.1);
+    rocketKey.position.set(-4, 6, 5);
+    const rocketRim = new THREE.PointLight(0x527dff, 20, 13, 2);
+    rocketRim.position.set(3, 2.6, -3.5);
+    this.rocketLighting.add(new THREE.HemisphereLight(0xaab8ff, 0x100913, 2.4), rocketKey, rocketRim);
+    this.rocketLighting.visible = false;
+    this.scene.add(this.defaultLighting, this.rocketLighting);
     this.controls = new OrbitControls(this.camera, canvas);
     this.controls.enableDamping = true;
     this.controls.dampingFactor = 0.075;
@@ -64,10 +77,23 @@ export class ProjectModelViewer {
     this.resizeObserver.observe(canvas.closest(".project-model-stage"));
   }
 
-  async load(config) {
+  async load(config, { background = false } = {}) {
+    if (!background && this.preparing.has(config.key)) this.preparing.get(config.key).background = false;
     if (!this.records.has(config.key)) {
-      const promise = new GLTFLoader().loadAsync(config.url).then((gltf) => {
+      const preparation = { background };
+      this.preparing.set(config.key, preparation);
+      const promise = (async () => {
+        const loader = new GLTFLoader();
+        let gltf;
+        if (this.loadAsset) {
+          const blob = await this.loadAsset(config.url, preparation.background);
+          await this.yieldWork(preparation.background);
+          gltf = await loader.parseAsync(await blob.arrayBuffer(), "");
+        } else gltf = await loader.loadAsync(config.url);
         const model = gltf.scene;
+        const presentation = new THREE.Group();
+        presentation.rotation.x = THREE.MathUtils.degToRad(config.presentationPitch ?? 0);
+        presentation.add(model);
         const clip = config.animation
           ? THREE.AnimationClip.findByName(gltf.animations, config.animation)
           : gltf.animations[0];
@@ -84,10 +110,15 @@ export class ProjectModelViewer {
           for (let frame = 0; frame <= Math.ceil(clip.duration * 60); frame++) {
             times.add(Math.min(frame / 60, clip.duration));
           }
+          let sliceStarted = performance.now();
           for (const time of times) {
             mixer.setTime(time);
-            model.updateMatrixWorld(true);
-            bounds.union(new THREE.Box3().setFromObject(model));
+            presentation.updateMatrixWorld(true);
+            bounds.union(new THREE.Box3().setFromObject(presentation));
+            if (performance.now() - sliceStarted >= 4) {
+              await this.yieldWork(preparation.background);
+              sliceStarted = performance.now();
+            }
           }
           mixer.setTime(0);
           model.traverse((node) => {
@@ -99,12 +130,13 @@ export class ProjectModelViewer {
             }
           });
         } else {
-          model.updateMatrixWorld(true);
-          bounds.setFromObject(model);
+          presentation.updateMatrixWorld(true);
+          bounds.setFromObject(presentation);
         }
         const root = new THREE.Group();
         root.name = `project-model-${config.key}`;
-        root.add(model);
+        root.add(presentation);
+        root.updateMatrixWorld(true);
         const anchor = config.orbitAnchor && model.getObjectByName(config.orbitAnchor);
         if (config.orbitAnchor && !anchor) throw new Error(`Missing ${config.orbitAnchor} orbit anchor in ${config.key}.`);
         // Exhaust is useful for fitting the view, but must not move the orbit
@@ -113,37 +145,119 @@ export class ProjectModelViewer {
         root.position.copy(centre).negate();
         root.updateMatrixWorld(true);
         const size = bounds.getSize(new THREE.Vector3());
-        return {
-          config, root, model, mixer, action, clip, bounds,
+        const record = {
+          config, root, presentation, model, mixer, action, clip, bounds,
           extent: Math.max(size.x, size.y, size.z, 0.1),
           radius: Math.max(size.length() / 2, 0.05),
           defaultView: null,
         };
-      }).catch((error) => {
+        record.effects = createRocketEffects(this.renderer, record);
+        return record;
+      })().catch((error) => {
         this.records.delete(config.key);
         throw error;
-      });
+      }).finally(() => this.preparing.delete(config.key));
       this.records.set(config.key, promise);
     }
     return this.records.get(config.key);
   }
 
-  async select(config) {
-    this.cancelSelection();
+  async prepare(config) {
+    const record = await this.load(config, { background: true });
+    // Never run a hidden model's effects over a visible interactive demo.
+    if (this.visible || this.active === record || record.gpuPrepared) return record;
+    if (!record.warmPromise) {
+      record.warmPromise = this.warmRecord(record).catch(error => {
+        record.warmPromise = null;
+        throw error;
+      });
+    }
+    await record.warmPromise;
+    return record;
+  }
+
+  async warmRecord(record) {
+    const scene = new THREE.Scene();
+    const lights = (record.config.lighting === "switch-rockets" ? this.rocketLighting : this.defaultLighting).clone();
+    lights.visible = true;
+    scene.add(lights, record.root);
+    const camera = new THREE.PerspectiveCamera(record.config.fieldOfView ?? 30, 1, record.extent / 100, record.extent * 20);
+    camera.position.set(1.5, 1.55, -1.4).normalize().multiplyScalar(record.radius * 4);
+    camera.lookAt(0, 0, 0);
+    const renderer = this.renderer;
+    let target = renderer.getRenderTarget();
+    try {
+      // Compile the same on/offscreen material variants used by real playback.
+      renderer.setRenderTarget(record.effects?.baseTarget || null);
+      const compiled = renderer.compileAsync(scene, camera);
+      renderer.setRenderTarget(target);
+      await compiled;
+      if (record.root.parent !== scene || this.active === record || this.visible) return;
+      const scratch = new THREE.WebGLRenderTarget(32, 32);
+      const time = record.mixer?.time ?? 0, exposure = renderer.toneMappingExposure;
+      try {
+        renderer.toneMappingExposure = record.config.exposure ?? 1;
+        record.mixer?.setTime(record.clip ? Math.min(1.6, record.clip.duration / 2) : 0);
+        renderer.setRenderTarget(scratch);
+        if (record.effects) record.effects.render(scene, camera);
+        else renderer.render(scene, camera);
+      } finally {
+        record.mixer?.setTime(time);
+        record.root.updateMatrixWorld(true);
+        renderer.toneMappingExposure = exposure;
+        renderer.setRenderTarget(target);
+        scratch.dispose();
+      }
+      const output = record.effects?.haloMaterial || record.effects?.outputMaterial;
+      if (output) {
+        const geometry = new THREE.BufferGeometry();
+        geometry.setAttribute("position", new THREE.Float32BufferAttribute([-1, 3, 0, -1, -1, 0, 3, -1, 0], 3));
+        geometry.setAttribute("uv", new THREE.Float32BufferAttribute([0, 2, 0, 0, 2, 0], 2));
+        const quad = new THREE.Mesh(geometry, output);
+        renderer.setRenderTarget(null);
+        const compiledOutput = renderer.compileAsync(quad, new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1));
+        renderer.setRenderTarget(target);
+        try { await compiledOutput; } finally { geometry.dispose(); }
+      }
+      record.gpuPrepared = true;
+    } finally {
+      if (record.root.parent === scene) scene.remove(record.root);
+      // No state was held changed across an await; another selection may have
+      // legitimately changed the render target since compilation began.
+    }
+  }
+
+  async select(config, { preserveState = false } = {}) {
+    const keepState = preserveState && config.swapGroup && this.active?.config.swapGroup === config.swapGroup;
+    if (keepState) this.selection++;
+    else this.cancelSelection();
     const selection = this.selection;
     const record = await this.load(config);
+    if (record.warmPromise) await record.warmPromise;
     if (selection !== this.selection) return null;
+    if (keepState && this.active?.config.swapGroup === config.swapGroup) {
+      const outgoing = this.active;
+      if (record === outgoing) return record; // Cancel a pending swap back to the visible model.
+      // Take the live clock at commit time, not at click time: the outgoing
+      // model keeps playing and orbiting throughout a cold asset load.
+      record.mixer?.setTime(outgoing.mixer?.time ?? 0);
+      const home = outgoing.defaultView;
+      record.defaultView = {
+        position: home.position.clone(), quaternion: home.quaternion.clone(),
+        target: home.target.clone(), zoom: home.zoom,
+      };
+      this.scene.remove(outgoing.root);
+      this.active = record;
+      this.scene.add(record.root);
+      this.applyAppearance(config);
+      // Camera, OrbitControls/damping, idle phase, reset tween and frame clock
+      // remain untouched. Only the model/effect pair changes on the next draw.
+      this.requestRender();
+      return record;
+    }
     this.active = record;
     this.scene.add(record.root);
-    this.canvas.closest(".project-model-stage").classList.toggle("has-expanded-model", !!config.expandViewport);
-    // The drawing area can grow without making the whole pane swallow touch
-    // scrolling. Keep the original model-sized drag surface and sensitivity.
-    const input = config.expandViewport ? this.canvas.parentElement : this.canvas;
-    if (this.controls.domElement !== input) {
-      this.controls.disconnect();
-      this.controls.connect(input);
-    }
-    this.renderer.toneMappingExposure = config.exposure ?? 1;
+    this.applyAppearance(config);
     // Keep the idle spin clock independent of user orbiting. OrbitControls
     // handles only the user's offset, never the automatic spin itself.
     this.controls.autoRotate = false;
@@ -159,6 +273,21 @@ export class ProjectModelViewer {
     this.canvas.style.visibility = "visible";
     this.requestRender();
     return record;
+  }
+
+  applyAppearance(config) {
+    this.canvas.closest(".project-model-stage").classList.toggle("has-expanded-model", !!config.expandViewport);
+    // The drawing area can grow without making the whole pane swallow touch
+    // scrolling. Keep the original model-sized drag surface and sensitivity.
+    const input = config.expandViewport ? this.canvas.parentElement : this.canvas;
+    if (this.controls.domElement !== input) {
+      this.controls.disconnect();
+      this.controls.connect(input);
+    }
+    this.renderer.toneMappingExposure = config.exposure ?? 1;
+    const rocketLighting = config.lighting === "switch-rockets";
+    this.defaultLighting.visible = !rocketLighting;
+    this.rocketLighting.visible = rocketLighting;
   }
 
   configureCamera(record, preserveView = false) {
@@ -288,6 +417,7 @@ export class ProjectModelViewer {
   resize() {
     if (!this.visible) return;
     const expanded = this.active?.config.expandViewport;
+    const previousSurface = this.surface;
     const frame = this.canvas.parentElement;
     const stage = this.canvas.closest(".project-model-stage");
     if (expanded) {
@@ -316,7 +446,9 @@ export class ProjectModelViewer {
     const aspect = expanded ? this.surface.anchorWidth / this.surface.anchorHeight : width / height;
     this.camera.aspect = aspect;
     this.camera.updateProjectionMatrix();
-    if (this.active && Math.abs(this.aspect - aspect) > 0.001) {
+    const framingChanged = expanded && (!previousSurface ||
+      ["width", "height", "anchorWidth", "anchorHeight", "x", "y"].some(key => Math.abs(previousSurface[key] - this.surface[key]) > 0.5));
+    if (this.active && (Math.abs(this.aspect - aspect) > 0.001 || framingChanged)) {
       this.configureCamera(this.active, true);
     }
     this.aspect = aspect;
@@ -371,7 +503,9 @@ export class ProjectModelViewer {
         moved = true;
       }
     }
-    this.renderer.render(this.scene, this.getRenderCamera());
+    const camera = this.getRenderCamera();
+    if (this.active.effects) this.active.effects.render(this.scene, camera);
+    else this.renderer.render(this.scene, camera);
     this.animationFrame = !this.reducedMotion || moved ? requestAnimationFrame(this.render) : 0;
   }
 
