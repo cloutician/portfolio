@@ -46,6 +46,10 @@ Touchline is represented as a bounded browser demo rather than the complete deve
 
 The public source therefore documents the interface and playback system but does not contain the SoccerNet-derived footage required to reproduce the complete visual demo.
 
+## Progressive interaction haptics
+
+`interaction-haptics.js` uses the Vibration API only where available. Trusted finger/pen scrubbing requests a 4 ms detent when the Touchline seek index changes, capped at one pulse per 50 ms; skipped samples never queue a burst. WormProfiler's previous/next buttons request one 12 ms pulse per accepted touch/pen click. Playback, hover, keyboard and mouse actions remain silent. Release, cancellation, lost capture, blur, hidden tabs and leaving Touchline clear scrub feedback. Reduced-motion mode disables pulses. Unsupported/denied APIs fail silently without changing control behaviour; no iOS hidden-switch workaround is installed. Pulse duration is not a guarantee of physical intensity on every device.
+
 ## Switch and the 3D project previews
 
 Switch (Remake), in slot 03, and the queued project in slot 04 use `model-viewer.js`, Three.js and `OrbitControls`. Both use the model-neutral `project-model-stage` and `project-model-canvas` hooks. The `interactive: "model"` setting selects this viewer; the separate `queued: true` setting controls slot 04's placeholder styling, not which renderer is used. Per-model configuration supplies the asset, animation, camera framing and accessible copy. The hoverable “Switch.” title is a native button that toggles independent `rocket-player` and `rocket-enemy` cache entries and mixers, and remembers the chosen variant when leaving the project. One renderer also caches the cat. All three records are warmed in the background on ordinary connections; selection tokens prevent late warming or asset loads from replacing the currently requested model.

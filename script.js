@@ -1,5 +1,6 @@
 import { createWormLensWebGLRenderer } from "./worm-lens-webgl.js";
 import { PreviewAssetQueue, yieldPreviewWork, enqueuePreviewPreparation, createPreviewThumbnail } from "./preview-assets.js";
+import { InteractionHaptics } from "./interaction-haptics.js";
 
 const previewAssets = new PreviewAssetQueue();
 
@@ -251,6 +252,7 @@ const replayTime = document.querySelector("#replay-time");
 const replayEvent = document.querySelector("#replay-event");
 const replayFrame = document.querySelector("#replay-frame");
 const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+const interactionHaptics = new InteractionHaptics({ enabled: !reducedMotion });
 const wormLensFilters = [...document.querySelectorAll("[data-worm-lens-filter]")]
   .map((filter) => ({
     mode: filter.dataset.wormLensFilter,
@@ -1273,7 +1275,9 @@ function scrubTouchlineFromPointer(clientX) {
   if (!touchlinePreview?.frames?.length) return;
   const bounds = touchlineSequence.getBoundingClientRect();
   const progress = Math.max(0, Math.min(1, (clientX - bounds.left) / bounds.width));
-  renderTouchlineFrame(Math.round(progress * (touchlinePreview.frames.length - 1)));
+  const index = Math.round(progress * (touchlinePreview.frames.length - 1));
+  if (touchlineScrubPointerId !== null) interactionHaptics.scrub(index);
+  renderTouchlineFrame(index);
 }
 
 function queueTouchlineScrub(clientX) {
@@ -1800,7 +1804,10 @@ function setActiveProject(index, { userInitiated = false, updateHistory = false 
   projectModelStage.hidden = !isModelProject;
   projectStage.classList.toggle("is-touchline", isTouchline);
   projectStage.classList.toggle("is-model", isModelProject);
-  if (!isTouchline) stopTouchlinePlayback();
+  if (!isTouchline) {
+    stopTouchlinePlayback();
+    interactionHaptics.endScrub();
+  }
   if (!isModelProject) stopModelViewer();
 
   if (project.interactive === "worm") {
@@ -3320,6 +3327,7 @@ window.addEventListener("pageshow", () => {
 });
 document.addEventListener("visibilitychange", () => {
   if (document.hidden) {
+    interactionHaptics.endScrub();
     cancelAnimationFrame(ambientAnimationFrame);
     ambientAnimationFrame = 0;
   }
@@ -3355,6 +3363,7 @@ touchlineSequence.addEventListener("pointerdown", (event) => {
   event.preventDefault();
   stopTouchlinePlayback();
   touchlineScrubPointerId = event.pointerId;
+  interactionHaptics.beginScrub(touchlineRequestedFrameIndex, event);
   touchlineSequence.focus({ preventScroll: true });
   touchlineSequence.setPointerCapture(event.pointerId);
   touchlineTimeline.classList.add("is-scrubbing");
@@ -3367,10 +3376,13 @@ function finishTouchlineScrub(event) {
   if (event.pointerId !== touchlineScrubPointerId) return;
   if (touchlineSequence.hasPointerCapture(event.pointerId)) touchlineSequence.releasePointerCapture(event.pointerId);
   touchlineScrubPointerId = null;
+  interactionHaptics.endScrub();
   touchlineTimeline.classList.remove("is-scrubbing");
 }
 touchlineSequence.addEventListener("pointerup", finishTouchlineScrub);
 touchlineSequence.addEventListener("pointercancel", finishTouchlineScrub);
+touchlineSequence.addEventListener("lostpointercapture", finishTouchlineScrub);
+window.addEventListener("blur", () => interactionHaptics.endScrub());
 touchlineSequence.addEventListener("keydown", (event) => {
   const keyActions = {
     ArrowLeft: touchlineRequestedFrameIndex - 1,
@@ -3426,8 +3438,14 @@ if (replayRange) {
 
 wormZoomTrigger.addEventListener("click", zoomWormView);
 wormReset.addEventListener("click", () => resetWormView({ waitForZoom: true }));
-wormPrevious.addEventListener("click", () => applyWormImage(activeWormImage - 1, -1));
-wormNext.addEventListener("click", () => applyWormImage(activeWormImage + 1, 1));
+wormPrevious.addEventListener("click", event => {
+  if (!isWormSwitching) interactionHaptics.tap(event);
+  applyWormImage(activeWormImage - 1, -1);
+});
+wormNext.addEventListener("click", event => {
+  if (!isWormSwitching) interactionHaptics.tap(event);
+  applyWormImage(activeWormImage + 1, 1);
+});
 [wormPrevious, wormNext].forEach(bindPreviewButtonFeedback);
 
 function writeWormLensScale(node, value) {

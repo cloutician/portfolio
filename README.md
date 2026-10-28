@@ -23,6 +23,7 @@ The embedded case-study interface includes:
 - High-resolution crops for detailed inspection without loading every original capture into the page.
 - A WebGL2 magnifying lens with a non-WebGL fallback.
 - Frame-to-frame navigation that preserves the active comparison state.
+- Brief vibration feedback on previous/next touch or pen taps in supported browsers.
 - Segmentation-class context, project outputs and experimental limitations.
 
 ![WormProfiler interface](docs/screenshots/worm-profiler.png)
@@ -38,6 +39,7 @@ The SoccerNet-derived frame sequence used by the live demonstration is retained 
 The embedded demo includes:
 
 - Frame-accurate timeline scrubbing and stepped navigation.
+- Short, rate-limited vibration ticks while touch/pen scrubbing, without vibration during playback.
 - Player and ball annotations rendered over the source footage.
 - Responsive scaling that preserves alignment between footage and overlays.
 - Bounded frame preloading and cache pruning for smoother playback.
@@ -60,6 +62,7 @@ Beyond the case studies, the site includes:
 - Responsive layouts for desktop, tablet and narrow mobile screens.
 - A service worker and deliberate asset caching strategy.
 - Reduced-motion and accessibility-aware interaction states.
+- Progressive haptics through the Vibration API: compatible Android browsers can provide feedback; unsupported devices, including iOS, retain the same controls without vibration. Reduced-motion mode disables pulses, and their physical feel depends on the device.
 - Static asset delivery through a Cloudflare Worker/Vite build.
 
 ## Technology
@@ -83,6 +86,7 @@ Beyond the case studies, the site includes:
 ├── script.js                 # Portfolio interactions and embedded demos
 ├── model-viewer.js           # Shared, model-neutral 3D project viewer
 ├── preview-assets.js         # Prioritized background loading and idle preparation
+├── interaction-haptics.js    # Short, rate-limited touch/pen vibration feedback
 ├── rocket-effects.js         # Transparent rocket-specific halo/bloom rendering
 ├── worm-lens-webgl.js        # WebGL2 comparison-lens renderer
 ├── worker/                    # Cloudflare Worker entry point
@@ -128,7 +132,7 @@ npm run build
 npm run preview
 ```
 
-Run the dependency-free queue tests with `npm test`.
+Run the dependency-free asset-queue and interaction-haptics tests with `npm test`.
 
 ## Asset and data note
 
