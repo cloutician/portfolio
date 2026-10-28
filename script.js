@@ -86,7 +86,7 @@ const projects = [
     model: "rocket-player",
     models: ["rocket-player", "rocket-enemy"],
     desc: "Recreating Atomicom’s arcade runner for web and Android.",
-    tags: ["Web + Android", "3D model", "Game remake"],
+    tags: ["Web + Android", "Three.js", "Game remake"],
     evidence: {
       eyebrow: "03 / Switch / Independent remake / In development",
       title: "Recreating Switch for web and Android.",
@@ -122,7 +122,7 @@ const projects = [
     queued: true,
     model: "cat",
     desc: "A new case study is being prepared. The cat is holding this slot for now.",
-    tags: ["3D model", "In progress"],
+    tags: ["In progress"],
   },
 ];
 
@@ -322,6 +322,7 @@ let wormLensWebGLRenderer = null;
 let wormLensWebGLAttempted = false;
 let wormLensWebGLPreparePromise = null;
 let wormLensTexturePrewarm = { index: -1, promise: null };
+let wormLensSize = { rest: 48, extent: 52 };
 let wormComparisonGeometry = { cropLeft: 0, cropWidth: 1, stageWidth: 0 };
 let wormSliderMotion = {
   value: 0,
@@ -934,7 +935,7 @@ async function applyWormImage(index, direction) {
     const lensPreparation = prepareWormLensStagesForWebGL([outgoingStage, incomingStage]);
     await Promise.all([
       prepareWormTransitionLayers(outgoingStage, incomingStage),
-      settleWithin(lensPreparation, 180),
+      lensPreparation,
     ]);
     void track.offsetWidth;
     track.classList.remove(preparationClass);
@@ -1541,12 +1542,13 @@ function renderProjects() {
             <span>${project.type}</span>
             <span>${project.year}</span>
           </span>
-          ${project.queued ? `
+          ${project.interactive === "model" ? `
             <span class="project-model-badge" aria-hidden="true">
               <b>3D</b>
               <small>Model</small>
             </span>
-          ` : `<span class="project-arrow" aria-hidden="true">&#8599;</span>`}
+          ` : ""}
+          ${project.queued ? "" : `<span class="project-arrow" aria-hidden="true">&#8599;</span>`}
         </button>
       `,
     )
@@ -2105,8 +2107,7 @@ function prewarmWormLensFrame(index = activeWormImage) {
       return renderer.prepare(layers).then((prepared) => {
         if (!prepared || index !== activeWormImage || !wormCompare.hidden) return prepared;
 
-        const handset = document.documentElement.classList.contains("is-handset");
-        const size = handset ? 24 : 48;
+        const size = wormLensSize.rest;
         const sampleRect = { left: 0, top: 0, width: size, height: size };
         const primeLayers = layers.map((layer) => ({ ...layer, rect: sampleRect }));
         const pixelRatio = Math.min(window.devicePixelRatio || 1, 2.5);
@@ -2164,7 +2165,7 @@ function getWormLensOpticalState(pixelRatio) {
   return {
     magnification: filter?.magnification.value ?? fallback.magnification,
     refraction: filter?.refraction.value ?? fallback.refraction,
-    mapExtentCss: mode === "handset" ? 26 : 52,
+    mapExtentCss: wormLensSize.extent,
     pixelRatio,
   };
 }
@@ -2186,9 +2187,11 @@ function renderWormLensView() {
       sampleRect,
       getWormLensOpticalState(pixelRatio),
     );
-    wormCompare.classList.toggle("is-webgl-lens", rendered);
-    if (rendered) return;
-    queueWormLensTexturePreparation(layers);
+    if (rendered) wormCompare.classList.add("is-webgl-lens");
+    // A cache miss is not a renderer failure. Keep the completed shader frame
+    // on screen until its replacement is ready, without flashing the fallback.
+    if (!rendered && renderer.ready) queueWormLensTexturePreparation(layers);
+    if (rendered || (renderer.ready && renderer.hasFrame && wormCompare.classList.contains("is-webgl-lens"))) return;
   } else {
     wormCompare.classList.remove("is-webgl-lens");
   }
@@ -3335,6 +3338,7 @@ document.addEventListener("visibilitychange", () => {
 });
 
 new ResizeObserver(() => queueViewportUpdate(0)).observe(document.body);
+new ResizeObserver(syncWormLensSize).observe(projectStage);
 document.fonts?.ready.then(() => {
   evidenceSizingKey = "";
   queueViewportUpdate(2);
@@ -3453,6 +3457,23 @@ function writeWormLensScale(node, value) {
   node.setAttribute("scale", value.toFixed(4));
 }
 
+function syncWormLensSize() {
+  // Use the actual preview width, not a phone/desktop 24px/48px jump. This also
+  // accommodates narrow desktop panels and tablet split-screen without a UA rule.
+  const rest = Math.min(48, Math.max(28, 14.2222 + projectStage.clientWidth / 22.5));
+  if (Math.abs(rest - wormLensSize.rest) < 0.01 && wormCompare.style.getPropertyValue("--worm-lens-size")) return;
+  wormLensSize = { rest, extent: rest * 52 / 48 };
+  wormCompare.style.setProperty("--worm-lens-size", `${rest.toFixed(3)}px`);
+  wormLensFilters.forEach(filter => {
+    filter.magnificationNode.closest("filter").querySelectorAll("feImage").forEach(map => {
+      map.setAttribute("width", wormLensSize.extent.toFixed(3));
+      map.setAttribute("height", wormLensSize.extent.toFixed(3));
+    });
+  });
+  syncWormLensOptics();
+  requestWormLensRender(200);
+}
+
 function stepWormLensSpring(channel, elapsed) {
   const steps = Math.max(1, Math.ceil(elapsed / (1 / 120)));
   const step = elapsed / steps;
@@ -3509,16 +3530,19 @@ function syncWormLensOptics() {
   wormLensFilters.forEach((filter) => {
     const targets = wormLensOpticalTargets[filter.mode]?.[state];
     if (!targets) return;
-    filter.magnification.target = targets.magnification;
-    filter.refraction.target = targets.refraction;
+    const sizeScale = wormLensSize.rest / (filter.mode === "handset" ? 24 : 48);
+    const magnification = targets.magnification * sizeScale;
+    const refraction = targets.refraction * sizeScale;
+    filter.magnification.target = magnification;
+    filter.refraction.target = refraction;
 
     if (reducedMotion) {
-      filter.magnification.value = targets.magnification;
+      filter.magnification.value = magnification;
       filter.magnification.velocity = 0;
-      filter.refraction.value = targets.refraction;
+      filter.refraction.value = refraction;
       filter.refraction.velocity = 0;
-      writeWormLensScale(filter.magnificationNode, targets.magnification);
-      writeWormLensScale(filter.refractionNode, targets.refraction);
+      writeWormLensScale(filter.magnificationNode, magnification);
+      writeWormLensScale(filter.refractionNode, refraction);
     }
   });
 

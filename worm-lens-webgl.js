@@ -264,6 +264,7 @@ export function createWormLensWebGLRenderer(canvas, onAvailabilityChange = () =>
   let compositeUniforms = null;
   let opticsUniforms = null;
   let ready = false;
+  let hasFrame = false;
   let initialisationPromise = null;
   let generation = 0;
   let useCounter = 0;
@@ -279,6 +280,7 @@ export function createWormLensWebGLRenderer(canvas, onAvailabilityChange = () =>
 
   function fail(error) {
     ready = false;
+    hasFrame = false;
     reportAvailability(false);
     if (error) console.warn("WebGL lens unavailable; using the SVG lens fallback.", error);
   }
@@ -370,6 +372,7 @@ export function createWormLensWebGLRenderer(canvas, onAvailabilityChange = () =>
   async function initialise() {
     const currentGeneration = ++generation;
     ready = false;
+    hasFrame = false;
     reportAvailability(false);
     clearImageCache(false);
 
@@ -520,8 +523,9 @@ export function createWormLensWebGLRenderer(canvas, onAvailabilityChange = () =>
     if (!ready || gl.isContextLost() || !sampleRect) return false;
 
     const renderLayers = normalizedLayers(layers);
-    if (!renderLayers.length
-      || !Number.isFinite(sampleRect.left)
+    // An empty view is valid when a swipe or edge position crosses black space.
+    // Render the same glass over the background instead of swapping renderers.
+    if (!Number.isFinite(sampleRect.left)
       || !Number.isFinite(sampleRect.top)
       || !Number.isFinite(sampleRect.width)
       || !Number.isFinite(sampleRect.height)
@@ -639,6 +643,7 @@ export function createWormLensWebGLRenderer(canvas, onAvailabilityChange = () =>
 
       gl.bindVertexArray(null);
       gl.activeTexture(gl.TEXTURE0);
+      hasFrame = true;
       return true;
     } catch (error) {
       fail(error);
@@ -650,6 +655,7 @@ export function createWormLensWebGLRenderer(canvas, onAvailabilityChange = () =>
     event.preventDefault();
     generation += 1;
     ready = false;
+    hasFrame = false;
     initialisationPromise = null;
     clearImageCache(false);
     reportAvailability(false);
@@ -664,6 +670,9 @@ export function createWormLensWebGLRenderer(canvas, onAvailabilityChange = () =>
   return {
     get ready() {
       return ready;
+    },
+    get hasFrame() {
+      return hasFrame;
     },
     prepare,
     render,

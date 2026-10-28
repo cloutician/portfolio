@@ -29,6 +29,8 @@ The browser demo deliberately separates source preparation from runtime delivery
 - Detailed views use dedicated high-resolution crops rather than scaling the overview indefinitely.
 - The comparison state is shared across pointer, touch and supported stylus interaction.
 - The WebGL2 lens uses decoded image textures; unsupported environments retain a fallback renderer.
+- Zoomed navigation prepares both stages' lens textures before the existing 420 ms slide starts. A transient texture miss retains the completed shader frame; only genuine renderer unavailability selects the fallback. Empty camera space is rendered through the glass normally, not treated as a failure.
+- Lens diameter follows the actual project-preview width (28–48 CSS pixels at rest), rather than a 24/48-pixel phone/desktop split. The ring, rail joins, hover/press sizes and both renderers' optical maps share that scale. Rendering remains on demand and scroll/offscreen suspension is unchanged.
 
 This structure balances close inspection with download size and mobile memory pressure.
 
