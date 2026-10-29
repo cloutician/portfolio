@@ -31,6 +31,8 @@ The browser demo deliberately separates source preparation from runtime delivery
 - The WebGL2 lens uses decoded image textures; unsupported environments retain a fallback renderer.
 - Zoomed navigation prepares both stages' lens textures before the existing 420 ms slide starts. A transient texture miss retains the completed shader frame; only genuine renderer unavailability selects the fallback. Empty camera space is rendered through the glass normally, not treated as a failure.
 - Lens diameter follows the actual project-preview width (28–48 CSS pixels at rest), rather than a 24/48-pixel phone/desktop split. The ring, rail joins, hover/press sizes and both renderers' optical maps share that scale. Rendering remains on demand and scroll/offscreen suspension is unchanged.
+- The opening comparison reveal updates the slider and paints its lens in the same animation frame, avoiding a second-frame lens handoff. Its existing 1,350 ms cubic-out motion and 58% endpoint remain unchanged. Manual dragging retains its coalesced drawing path; the automatic path still respects scroll, offscreen and hidden-tab suspension.
+- Slider movement changes the reveal viewport's `clip-path` and control's `transform` directly rather than updating inherited position variables across the image subtree. Automatic frames read image geometry before those writes and project the lens to the new position, avoiding a write/read style recalculation without using stale image geometry. This reduces per-frame browser work; it is not a guarantee of 120 Hz on every device/browser.
 
 This structure balances close inspection with download size and mobile memory pressure.
 

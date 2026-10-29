@@ -2059,8 +2059,6 @@ body.is-loaded .hero-scroll { transition-delay: 620ms; }
 }
 
 .worm-stage {
-  --reveal: 0%;
-  --line-x: 50%;
   --zoom-transform: translate(0, 0) scale(1);
   --roi-left: 54.976%;
   --roi-top: 32.236%;
@@ -2160,7 +2158,7 @@ body.is-loaded .hero-scroll { transition-delay: 620ms; }
   z-index: 2;
   inset: 0;
   overflow: hidden;
-  clip-path: inset(0 calc(100% - var(--line-x)) 0 0);
+  clip-path: inset(0 100% 0 0);
   opacity: 0;
   pointer-events: none;
   transition: opacity 220ms ease;
@@ -2385,7 +2383,7 @@ body.is-loaded .hero-scroll { transition-delay: 620ms; }
   bottom: var(--stage-caption-height);
   width: 1px;
   pointer-events: none;
-  transform: translate3d(var(--line-x), 0, 0);
+  transform: translate3d(0, 0, 0);
   transition: --lens-size var(--control-motion);
   will-change: transform;
 }

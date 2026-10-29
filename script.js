@@ -201,9 +201,11 @@ const evidenceMetrics = document.querySelector("#evidence-metrics");
 let evidenceSizingKey = "";
 let wormStage = document.querySelector("#worm-stage");
 let wormMedia = document.querySelector("#worm-media");
+let wormRevealViewport = wormStage.querySelector(".worm-reveal-viewport");
 let wormZoomTrigger = document.querySelector("#worm-zoom-trigger");
 const wormCompare = document.querySelector("#worm-compare");
 const wormComparisonRange = document.querySelector("#worm-comparison-range");
+const wormComparisonControl = document.querySelector(".comparison-control");
 const wormComparisonLens = document.querySelector("#worm-comparison-lens");
 const wormComparisonLensWebGL = document.querySelector("#worm-comparison-lens-webgl");
 const wormReset = document.querySelector("#worm-reset");
@@ -324,6 +326,7 @@ let wormLensWebGLPreparePromise = null;
 let wormLensTexturePrewarm = { index: -1, promise: null };
 let wormLensSize = { rest: 48, extent: 52 };
 let wormComparisonGeometry = { cropLeft: 0, cropWidth: 1, stageWidth: 0 };
+let wormComparisonLineX = 0;
 let wormSliderMotion = {
   value: 0,
   time: 0,
@@ -804,18 +807,14 @@ function prepareIncomingWormStage(stage, index) {
   const targetCentreY = usableHeight / 2;
   const translateX = targetCentreX - planeLeft - scale * cropCentreX;
   const translateY = targetCentreY - scale * cropCentreY;
-  const cropWidth = planeWidth * crop.width * scale;
-  const cropLeft = targetCentreX - cropWidth / 2;
   const comparisonValue = Number(wormComparisonRange.value);
   const lineX = stageWidth * (comparisonValue / 100);
-  const cropReveal = Math.max(0, Math.min(100, ((lineX - cropLeft) / cropWidth) * 100));
 
   stage.style.setProperty(
     "--zoom-transform",
     `translate(${translateX}px, ${translateY}px) scale(${scale})`,
   );
-  stage.style.setProperty("--reveal", `${cropReveal}%`);
-  stage.style.setProperty("--line-x", `${lineX}px`);
+  stage.querySelector(".worm-reveal-viewport").style.clipPath = `inset(0 calc(100% - ${lineX}px) 0 0)`;
 }
 
 function adoptWormStage(stage) {
@@ -823,6 +822,7 @@ function adoptWormStage(stage) {
   wormStage.id = "worm-stage";
   wormMedia = stage.querySelector(".worm-media");
   wormMedia.id = "worm-media";
+  wormRevealViewport = stage.querySelector(".worm-reveal-viewport");
   wormZoomTrigger = stage.querySelector(".worm-zoom-trigger");
   wormZoomTrigger.id = "worm-zoom-trigger";
   wormSource = stage.querySelector(".worm-source");
@@ -2170,16 +2170,30 @@ function getWormLensOpticalState(pixelRatio) {
   };
 }
 
-function renderWormLensView() {
+function captureWormLensFrame(lineX = null) {
   if (!wormComparisonLens || wormCompare.hidden || !wormCompare.classList.contains("is-ready")) return;
 
-  const sampleRect = wormComparisonLens.getBoundingClientRect();
-  if (!sampleRect.width || !sampleRect.height) return;
+  const currentRect = wormComparisonLens.getBoundingClientRect();
+  if (!currentRect.width || !currentRect.height) return;
+  const deltaX = lineX === null ? 0 : lineX - wormComparisonLineX;
+  const sampleRect = {
+    left: currentRect.left + deltaX, right: currentRect.right + deltaX,
+    top: currentRect.top, bottom: currentRect.bottom,
+    width: currentRect.width, height: currentRect.height,
+  };
 
-  const pixelRatio = Math.min(window.devicePixelRatio || 1, 2.5);
   const transitionStages = [...projectStage.querySelectorAll(".worm-swipe-track .worm-stage")];
   const stages = transitionStages.length ? transitionStages : [wormStage];
   const layers = collectWormLensLayers(stages, sampleRect);
+  return { sampleRect, layers };
+}
+
+function renderWormLensView(frame = null) {
+  if (!wormComparisonLens || wormCompare.hidden || !wormCompare.classList.contains("is-ready")) return;
+  const snapshot = frame || captureWormLensFrame();
+  if (!snapshot) return;
+  const { sampleRect, layers } = snapshot;
+  const pixelRatio = Math.min(window.devicePixelRatio || 1, 2.5);
   const renderer = ensureWormLensWebGLRenderer();
   if (renderer?.ready) {
     const rendered = renderer.render(
@@ -2274,28 +2288,32 @@ function suspendWormLensForScroll() {
   wormLensScrollTimer = window.setTimeout(resumeWormLensAfterScroll, 100);
 }
 
-function updateWormComparison(value) {
+function updateWormComparison(value, { renderLensNow = false } = {}) {
   const clampedValue = Math.max(0, Math.min(100, value));
   const stageWidth = wormComparisonGeometry.stageWidth || wormStage.clientWidth;
   const lineX = stageWidth * (clampedValue / 100);
-  const cropReveal = Math.max(
-    0,
-    Math.min(
-      100,
-      ((lineX - wormComparisonGeometry.cropLeft) / wormComparisonGeometry.cropWidth) * 100,
-    ),
-  );
-
+  // Read the moving image/lens geometry before changing the clip and transform.
+  // The snapshot targets this step's new position without a write/read reflow.
+  const lensFrame = renderLensNow && !wormLensScrollSuspended && projectIsVisible && !document.hidden
+    ? captureWormLensFrame(lineX) : null;
   wormComparisonRange.value = String(clampedValue);
-  wormStage.style.setProperty("--reveal", `${cropReveal}%`);
-  wormStage.style.setProperty("--line-x", `${lineX}px`);
-  wormCompare.style.setProperty("--line-x", `${lineX}px`);
+  wormRevealViewport.style.clipPath = `inset(0 calc(100% - ${lineX}px) 0 0)`;
+  wormComparisonControl.style.transform = `translate3d(${lineX}px, 0, 0)`;
+  wormComparisonLineX = lineX;
   const isComplete = clampedValue >= 99.5;
   if (clampedValue > 0 && wormKey.hidden) {
     wormKey.hidden = false;
   }
   wormStage.classList.toggle("is-complete", isComplete);
-  requestWormLensRender();
+  if (renderLensNow) {
+    // An automatic step already runs inside requestAnimationFrame. Paint the
+    // lens after this step's position writes, not in a second, later frame.
+    cancelAnimationFrame(wormLensRenderAnimationFrame);
+    wormLensRenderAnimationFrame = 0;
+    if (!wormLensScrollSuspended && projectIsVisible && !document.hidden) renderWormLensView(lensFrame);
+  } else {
+    requestWormLensRender();
+  }
 }
 
 function animateWormComparison(target, duration = 1350) {
@@ -2306,7 +2324,7 @@ function animateWormComparison(target, duration = 1350) {
   function step(time) {
     const progress = Math.min(1, (time - startTime) / duration);
     const eased = 1 - (1 - progress) ** 3;
-    updateWormComparison(startValue + (target - startValue) * eased);
+    updateWormComparison(startValue + (target - startValue) * eased, { renderLensNow: true });
     if (progress < 1) wormAnimationFrame = requestAnimationFrame(step);
   }
 
