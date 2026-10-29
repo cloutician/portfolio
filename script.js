@@ -341,6 +341,7 @@ let replayMode = "camera";
 let replayProgress = 0.525;
 let touchlinePreview = null;
 let touchlineRequestedFrameIndex = 79;
+let touchlineSeekDirection = 1;
 let touchlineActiveLayerIndex = 0;
 let touchlineRenderRequest = 0;
 let touchlinePlaybackFrame = 0;
@@ -1043,11 +1044,19 @@ function loadTouchlineFrameImage(sample, { priority = "user" } = {}) {
   const cached = touchlineFrameImageCache.get(sample.image);
   if (cached) {
     previewAssets.promote(touchlineFrameUrl(sample), priority);
+    if (priority === "user" || (priority === "near" && cached.priority === "background")) {
+      cached.priority = priority;
+      cached.resume?.();
+    }
     return cached.promise;
   }
-  const entry = { objectUrl: null, released: false };
+  const entry = { objectUrl: null, released: false, priority };
+  const promoted = new Promise(resolve => { entry.resume = resolve; });
   entry.promise = previewAssets.blob(touchlineFrameUrl(sample), { priority }).then(async blob => {
-    if (priority !== "user") await yieldPreviewWork();
+    // Only speculative background work waits for input to stop. Neighbouring
+    // seek frames must decode during a drag, and a requested frame can promote
+    // an existing background decoder rather than waiting for its idle gate.
+    if (entry.priority === "background") await Promise.race([yieldPreviewWork(), promoted]);
     if (entry.released) return null;
     entry.objectUrl = URL.createObjectURL(blob);
     const image = new Image();
@@ -1065,10 +1074,25 @@ function loadTouchlineFrameImage(sample, { priority = "user" } = {}) {
   return entry.promise;
 }
 
-function pruneTouchlineFrameCache(centreIndex, radiusBefore = 4, radiusAfter = 12) {
+function touchlineCacheBounds(centreIndex) {
+  const playing = touchlinePlaybackRunning || touchlinePlaybackPending;
+  return {
+    first: Math.max(0, centreIndex - (playing ? 4 : 8)),
+    last: Math.min(touchlinePreview.frames.length - 1, centreIndex + (playing ? 12 : 8)),
+  };
+}
+
+function touchlinePrefetchIndexes(centreIndex, count) {
+  const { first, last } = touchlineCacheBounds(touchlineRequestedFrameIndex);
+  const direction = touchlinePlaybackRunning || touchlinePlaybackPending ? 1 : touchlineSeekDirection;
+  return Array.from({ length: last - first + 1 }, (_, offset) => first + offset)
+    .sort((a, b) => Math.abs(a - centreIndex) - Math.abs(b - centreIndex) || (b - a) * direction)
+    .slice(0, count);
+}
+
+function pruneTouchlineFrameCache(centreIndex) {
   if (!touchlinePreview?.frames?.length) return;
-  const first = Math.max(0, centreIndex - radiusBefore);
-  const last = Math.min(touchlinePreview.frames.length - 1, centreIndex + radiusAfter);
+  const { first, last } = touchlineCacheBounds(centreIndex);
   const keep = new Set(
     touchlinePreview.frames.slice(first, last + 1).map((sample) => sample.image),
   );
@@ -1076,6 +1100,7 @@ function pruneTouchlineFrameCache(centreIndex, radiusBefore = 4, radiusAfter = 1
   touchlineFrameImageCache.forEach((entry, key) => {
     if (keep.has(key) || displayed.has(entry.objectUrl)) return;
     entry.released = true;
+    entry.resume?.();
     // A pending decoder revokes its URL after it finishes, never mid-decode.
     entry.promise.then(() => {
       if (entry.objectUrl) URL.revokeObjectURL(entry.objectUrl);
@@ -1089,12 +1114,18 @@ async function renderTouchlineFrame(index) {
   const targetIndex = Math.max(0, Math.min(touchlinePreview.frames.length - 1, index));
   const request = ++touchlineRenderRequest;
   const sample = touchlinePreview.frames[targetIndex];
+  if (targetIndex !== touchlineRequestedFrameIndex) touchlineSeekDirection = Math.sign(targetIndex - touchlineRequestedFrameIndex);
   touchlineRequestedFrameIndex = targetIndex;
   pruneTouchlineFrameCache(targetIndex);
   updateTouchlineTimeline(targetIndex);
 
   try {
-    const decodedImage = await loadTouchlineFrameImage(sample);
+    const pendingImage = loadTouchlineFrameImage(sample);
+    // Start both sides before awaiting this frame, so a continuous drag does
+    // not have to stop for neighbours to become ready. The current frame has
+    // user priority and the same 17-entry window still bounds decoded images.
+    void preloadTouchlineFrames(targetIndex);
+    const decodedImage = await pendingImage;
     if (!decodedImage || request !== touchlineRenderRequest) return false;
 
     const nextLayerIndex = touchlineFrameLayers.length > 1 ? 1 - touchlineActiveLayerIndex : 0;
@@ -1119,7 +1150,6 @@ async function renderTouchlineFrame(index) {
     touchlineActiveLayerIndex = nextLayerIndex;
     const previewNumber = String(targetIndex + 1).padStart(3, "0");
     touchlineFrameLabel.textContent = `Preview ${previewNumber} / ${touchlinePreview.frames.length}`;
-    preloadTouchlineFrames(targetIndex + 1, 8);
     pruneTouchlineFrameCache(targetIndex);
     return true;
   } catch (error) {
@@ -1128,15 +1158,10 @@ async function renderTouchlineFrame(index) {
   }
 }
 
-function preloadTouchlineFrames(startIndex, count = 10, priority = "near") {
+function preloadTouchlineFrames(centreIndex, count = 17, priority = "near") {
   if (!touchlinePreview?.frames) return Promise.resolve([]);
-  const pendingFrames = touchlinePreview.frames
-    .slice(startIndex, startIndex + count)
-    .filter(sample => {
-      const index = touchlinePreview.frames.indexOf(sample);
-      return index >= touchlineRequestedFrameIndex - 4 && index <= touchlineRequestedFrameIndex + 12;
-    })
-    .map((sample) => loadTouchlineFrameImage(sample, { priority }));
+  const pendingFrames = touchlinePrefetchIndexes(centreIndex, count)
+    .map(index => loadTouchlineFrameImage(touchlinePreview.frames[index], { priority }));
   return Promise.allSettled(pendingFrames);
 }
 
@@ -1255,7 +1280,6 @@ function advanceTouchlinePlayback(now) {
   );
   if (targetIndex !== touchlineRequestedFrameIndex) {
     renderTouchlineFrame(targetIndex);
-    preloadTouchlineFrames(targetIndex);
   }
   if (sourceFrame >= touchlinePreview.media.frame_count) {
     renderTouchlineFrame(touchlinePreview.frames.length - 1);
