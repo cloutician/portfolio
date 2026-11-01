@@ -197,6 +197,7 @@ const stageType = document.querySelector("#stage-type");
 const stageCaption = document.querySelector(".stage-caption");
 const stageVideo = document.querySelector("#project-video");
 const projectEvidence = document.querySelector("#project-evidence");
+const aboutSection = document.querySelector("#about");
 const evidenceMetrics = document.querySelector("#evidence-metrics");
 let evidenceSizingKey = "";
 let wormStage = document.querySelector("#worm-stage");
@@ -1812,6 +1813,7 @@ function setActiveProject(index, { userInitiated = false, updateHistory = false 
   if (isModelProject) modelSlotNumber.textContent = padNumber(index);
   stageTitle.textContent = project.previewTitle || project.title;
   projectStage.dataset.project = project.slug;
+  if (project.evidence) aboutSection.dataset.project = project.slug;
   stageType.textContent = project.type;
   renderProjectEvidence(project);
   if (updateHistory) {

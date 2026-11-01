@@ -2834,13 +2834,34 @@ body.is-loaded .hero-scroll { transition-delay: 620ms; }
   font-size: var(--stage-caption-title-size);
 }
 
+/* Shared case-study/About palette: switching a project updates both sections. */
+.project-evidence,
+.about-section {
+  --project-theme-surface: var(--blue);
+  --project-theme-accent: var(--lime);
+  --project-theme-text: var(--white);
+}
+
+.project-evidence[data-project="touchline"],
+.about-section[data-project="touchline"] {
+  --project-theme-surface: #103b27;
+}
+
+.project-evidence[data-project="switch"],
+.about-section[data-project="switch"] {
+  --project-theme-surface: #c6381c;
+  --project-theme-accent: #ffdc53;
+  --project-theme-text: #fff9f2;
+}
+
 /* About */
 .about-section {
   scroll-margin-top: var(--header-height);
   border-top: 1px solid var(--black);
-  background: var(--blue);
+  background: var(--project-theme-surface);
   padding: clamp(4.75rem, 7vw, 7rem) var(--page-inset);
-  color: var(--white);
+  color: var(--project-theme-text);
+  transition: background-color 220ms var(--ease), color 220ms var(--ease);
 }
 
 .about-head .section-index {
@@ -2886,7 +2907,8 @@ body.is-loaded .hero-scroll { transition-delay: 620ms; }
 
 .cap-index {
   font-size: 0.66rem;
-  color: var(--lime);
+  color: var(--project-theme-accent);
+  transition: color 220ms var(--ease);
 }
 
 .cap-name {
@@ -3840,14 +3862,6 @@ html.is-handset .about-copy p {
   color: rgba(10, 10, 10, 0.58);
 }
 
-.project-evidence[data-project="switch"] .evidence-status {
-  background: #c6381c;
-}
-
-.project-evidence[data-project="switch"] .evidence-status strong {
-  color: #ffdc53;
-}
-
 .project-evidence[data-project="switch"] .evidence-status p {
   color: rgba(255, 249, 242, 0.92);
 }
@@ -4086,12 +4100,8 @@ html.is-handset .about-copy p {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   border-top: 1px solid var(--black);
-  background: var(--blue);
-  color: var(--white);
-}
-
-.project-evidence[data-project="touchline"] .evidence-status {
-  background: #103b27;
+  background: var(--project-theme-surface);
+  color: var(--project-theme-text);
 }
 
 .evidence-status > div {
@@ -4107,7 +4117,7 @@ html.is-handset .about-copy p {
 }
 
 .evidence-status strong {
-  color: var(--lime);
+  color: var(--project-theme-accent);
   font-family: var(--font-mono);
   font-size: 0.56rem;
   font-weight: 400;
