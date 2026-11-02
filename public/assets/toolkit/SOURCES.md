@@ -3,6 +3,8 @@
 Devicon icons: https://github.com/devicons/devicon/tree/6a37858047b0e8d9c9c0e68f4a071fc410652e89/icons
 Devicon is MIT-licensed. The original geometry and colours are retained, with the lightweight monochrome Linux variant.
 
+Three.js uses `icons/threejs/threejs-original.svg` from the same pinned Devicon revision, with redundant editor styling removed and the original black geometry retained.
+
 Java, AWS, Google Cloud, OpenCV and scikit-learn reuse the Devicon artwork already stored in the GitHub profile badges. AWS lettering is dark for this light surface.
 
 Codex reuses the Lobe Icons artwork already stored in the GitHub profile badges (MIT). Cursor and Claude reuse Simple Icons artwork (CC0). NVIDIA (CUDA) and ONNX also use Simple Icons (CC0).
