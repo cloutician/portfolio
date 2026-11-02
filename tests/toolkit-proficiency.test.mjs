@@ -5,10 +5,10 @@ import test from 'node:test';
 const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
 const toolkit = html.slice(html.indexOf('<div class="toolkit-grid">'), html.indexOf('<section class="contact-section"'));
 
-test('all toolkit proficiency colours match the supplied ratings, including separate Qt and Qt Creator ratings', () => {
+test('all toolkit proficiency colours match the supplied ratings, including Qt and Qt Creator', () => {
   const expected = {
-    d: ['C++', 'Python', 'TensorFlow', 'OpenCV', 'ONNX Runtime', 'NumPy', 'Jupyter', 'ilastik', 'AWS', 'Qt Creator', 'Codex'],
-    s: ['Kotlin', 'TypeScript', 'Java', 'JavaScript', 'SQL', 'scikit-learn', 'Qt', 'Android', 'Node.js', 'pandas', 'PostgreSQL', 'Git', 'Android Studio', 'Cursor'],
+    d: ['C++', 'Python', 'TensorFlow', 'OpenCV', 'ONNX Runtime', 'Qt', 'NumPy', 'Jupyter', 'ilastik', 'AWS', 'Qt Creator', 'Codex'],
+    s: ['Kotlin', 'TypeScript', 'Java', 'JavaScript', 'SQL', 'scikit-learn', 'Android', 'Node.js', 'pandas', 'PostgreSQL', 'Git', 'Android Studio', 'Cursor'],
     y: ['PyTorch', 'Jetpack Compose', 'React', 'Three.js', 'Matplotlib', 'CellProfiler', 'Google Cloud', 'Docker', 'Linux', 'Apache Spark', 'CMake'],
     r: ['CUDA', 'Fiji / ImageJ', 'Claude'],
   };
