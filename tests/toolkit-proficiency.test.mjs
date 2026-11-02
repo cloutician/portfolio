@@ -7,8 +7,8 @@ const toolkit = html.slice(html.indexOf('<div class="toolkit-grid">'), html.inde
 
 test('all toolkit proficiency colours match the supplied ratings, including separate Qt and Qt Creator ratings', () => {
   const expected = {
-    d: ['C++', 'Python', 'OpenCV', 'ONNX Runtime', 'NumPy', 'Jupyter', 'ilastik', 'AWS', 'Qt Creator', 'Codex'],
-    s: ['Kotlin', 'TypeScript', 'Java', 'JavaScript', 'SQL', 'TensorFlow', 'scikit-learn', 'Qt', 'Android', 'Node.js', 'pandas', 'PostgreSQL', 'Git', 'Android Studio', 'Cursor'],
+    d: ['C++', 'Python', 'TensorFlow', 'OpenCV', 'ONNX Runtime', 'NumPy', 'Jupyter', 'ilastik', 'AWS', 'Qt Creator', 'Codex'],
+    s: ['Kotlin', 'TypeScript', 'Java', 'JavaScript', 'SQL', 'scikit-learn', 'Qt', 'Android', 'Node.js', 'pandas', 'PostgreSQL', 'Git', 'Android Studio', 'Cursor'],
     y: ['PyTorch', 'Jetpack Compose', 'React', 'Three.js', 'Matplotlib', 'CellProfiler', 'Google Cloud', 'Docker', 'Linux', 'Apache Spark', 'CMake'],
     r: ['CUDA', 'Fiji / ImageJ', 'Claude'],
   };
