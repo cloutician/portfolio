@@ -8,8 +8,8 @@ const toolkit = html.slice(html.indexOf('<div class="toolkit-grid">'), html.inde
 test('all toolkit proficiency colours match the supplied ratings, including Qt and Qt Creator', () => {
   const expected = {
     d: ['C++', 'Python', 'TensorFlow', 'OpenCV', 'Qt', 'NumPy', 'Jupyter', 'ilastik', 'AWS', 'Qt Creator', 'Codex'],
-    s: ['Kotlin', 'TypeScript', 'Java', 'JavaScript', 'SQL', 'scikit-learn', 'ONNX Runtime', 'Android', 'Node.js', 'pandas', 'Docker', 'PostgreSQL', 'Git', 'Android Studio', 'Cursor'],
-    y: ['PyTorch', 'Jetpack Compose', 'React', 'Three.js', 'Matplotlib', 'CellProfiler', 'Google Cloud', 'Linux', 'Apache Spark', 'CMake'],
+    s: ['Kotlin', 'TypeScript', 'Java', 'JavaScript', 'SQL', 'scikit-learn', 'ONNX Runtime', 'Android', 'Three.js', 'Node.js', 'pandas', 'Docker', 'PostgreSQL', 'Git', 'Android Studio', 'Cursor'],
+    y: ['PyTorch', 'Jetpack Compose', 'React', 'Matplotlib', 'CellProfiler', 'Google Cloud', 'Linux', 'Apache Spark', 'CMake'],
     r: ['CUDA', 'Fiji / ImageJ', 'Claude'],
   };
   const entries = [...toolkit.matchAll(/<li data-proficiency="([dsyr])">[\s\S]*?<\/li>/g)];
