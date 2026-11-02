@@ -7,7 +7,7 @@ Three.js uses `icons/threejs/threejs-original.svg` from the same pinned Devicon 
 
 Java, AWS, Google Cloud, OpenCV and scikit-learn reuse the Devicon artwork already stored in the GitHub profile badges. AWS lettering is dark for this light surface.
 
-Codex reuses the Lobe Icons artwork already stored in the GitHub profile badges (MIT). Cursor and Claude reuse Simple Icons artwork (CC0). NVIDIA (CUDA) and ONNX also use Simple Icons (CC0).
+Codex displays the ChatGPT/OpenAI knot mark from [Lobe Icons, revision 8064bdc847be0a94c956c00440eb67586af2871f](https://github.com/lobehub/lobe-icons/blob/8064bdc847be0a94c956c00440eb67586af2871f/packages/static-svg/icons/openai.svg) (MIT), stored as `chatgpt.svg`. The original geometry is retained with dark lettering-colour fill for the light surface. Cursor and Claude reuse Simple Icons artwork (CC0). NVIDIA (CUDA) and ONNX also use Simple Icons (CC0).
 
 SQL uses the existing generic database symbol from the GitHub profile. It is not a product mark.
 
