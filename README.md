@@ -49,7 +49,7 @@ The embedded demo includes:
 
 ### Switch (Remake)
 
-An in-progress recreation of Atomicom's Android arcade runner, targeting web and Android. The full game is roughly 85% complete; the portfolio's animated ship viewer is a preview of the wider remake, not its complete scope. Attempts to reverse-engineer a working version of the legacy build have not yet succeeded. Completion is targeted for late 2026, not promised as a release date.
+An in-progress recreation of Atomicom's Android arcade runner, targeting web and Android. The full game is roughly 90% complete; the portfolio's animated ship viewer is a preview of the wider remake, not its complete scope. Attempts to reverse-engineer a working version of the legacy build have not yet succeeded. Completion is targeted for late 2026, not promised as a release date.
 
 The portfolio includes player and enemy rockets, toggled by the interactive “Switch.” title without resetting the camera, idle spin or animation phase. Both contain embedded ignition, thrust, shutdown and engine-off loops, layered exhaust and animated embers. They retain their exported materials, with separate red-panel and white-trim glow treatments over a transparent canvas. Orbit controls use fixed magnification, a gentle idle spin and a reset that rejoins that spin without rewinding it. The original-game screenshot is labelled separately as reference material. This is an independent project, not an official Atomicom release.
 

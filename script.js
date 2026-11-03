@@ -3,11 +3,13 @@ import { PreviewAssetQueue, yieldPreviewWork, enqueuePreviewPreparation, createP
 import { InteractionHaptics } from "./interaction-haptics.js";
 
 const previewAssets = new PreviewAssetQueue();
+const switchCompletion = 90;
 
 const projects = [
   {
     slug: "worm-profiler",
     title: "WormProfiler",
+    repositoryUrl: "https://github.com/cloutician/WormProfiler",
     type: "ilastik",
     year: "2026",
     demo: "",
@@ -90,7 +92,7 @@ const projects = [
     evidence: {
       eyebrow: "03 / Switch / Independent remake / In development",
       title: "Recreating Switch for web and Android.",
-      summary: "I’m recreating Atomicom’s Switch for web and Android. The full game is roughly 85% complete; the animated ship shown here is an interactive preview of that wider remake.",
+      summary: `I’m recreating Atomicom’s Switch for web and Android. The full game is roughly ${switchCompletion}% complete; the animated ship shown here is an interactive preview of that wider remake.`,
       metrics: [],
       media: {
         src: "/assets/switch/original-game.webp",
@@ -101,12 +103,12 @@ const projects = [
       pipeline: [
         ["Switch", "Original game by Atomicom"],
         ["Web + Android", "Target platforms"],
-        ["~85%", "Full-game completion (estimate)"],
+        [`~${switchCompletion}%`, "Full-game completion (estimate)"],
         ["2026", "Year-end completion target"],
       ],
       status: [
         ["Why rebuild", "Legacy native-library issues stop the original running on my newer Android devices. Reverse engineering remains an open avenue, but the remake is how I’m moving the project forward."],
-        ["Current build", "Development is ongoing on the full game, with roughly 85% of the remake complete. I’m aiming to finish before the end of 2026."],
+        ["Current build", `Development is ongoing on the full game, with roughly ${switchCompletion}% of the remake complete. I’m aiming to finish before the end of 2026.`],
       ],
     },
   },
@@ -142,7 +144,7 @@ const switchRocketSettings = {
   reducedTime: 0,
   heading: "Switch.",
   status: "Independent remake",
-  description: "My recreation of Atomicom’s arcade runner for web and Android. The full game is roughly 85% complete.",
+  description: `My recreation of Atomicom’s arcade runner for web and Android. The full game is roughly ${switchCompletion}% complete.`,
 };
 
 const modelConfigs = {
@@ -1547,16 +1549,24 @@ bindPreviewButtonFeedback(modelSwitch);
 function renderProjects() {
   projectIndex.classList.toggle("has-two-projects", projects.length === 2);
   projectIndex.innerHTML = projects
-    .map(
-      (project, index) => `
-        <button
+    .map((project, index) => {
+      // A repository link and preview button must be siblings, not nested controls.
+      const rowTag = project.repositoryUrl ? "div" : "button";
+      const previewAttributes = `type="button" aria-pressed="${index === 0}"
+        aria-controls="${project.evidence ? "project-stage project-evidence" : "project-stage"}"`;
+      const arrow = project.repositoryUrl
+        ? `<a class="project-arrow project-repo-link" href="${project.repositoryUrl}" target="_blank"
+             rel="noopener noreferrer" aria-label="${project.title} on GitHub (opens in a new tab)"
+             title="View ${project.title} on GitHub">&#8599;</a>`
+        : `<span class="project-arrow" aria-hidden="true">&#8599;</span>`;
+      return `
+        <${rowTag}
           class="project-row${index === 0 ? " is-active" : ""}${project.queued ? " is-queued" : ""}"
-          type="button"
           data-project-index="${index}"
           data-project="${project.slug}"
-          aria-pressed="${index === 0}"
-          aria-controls="${project.evidence ? "project-stage project-evidence" : "project-stage"}"
+          ${project.repositoryUrl ? "" : previewAttributes}
         >
+          ${project.repositoryUrl ? `<button class="project-row-select" ${previewAttributes} aria-label="Show ${project.title} preview"></button>` : ""}
           <span class="project-number">${padNumber(index)}</span>
           <span class="project-headline">
             <h3 class="project-title">${project.title}</h3>
@@ -1573,10 +1583,10 @@ function renderProjects() {
               <small>Model</small>
             </span>
           ` : ""}
-          ${project.queued ? "" : `<span class="project-arrow" aria-hidden="true">&#8599;</span>`}
-        </button>
-      `,
-    )
+          ${project.queued ? "" : arrow}
+        </${rowTag}>
+      `;
+    })
     .join("");
   syncProjectDescriptionHeights();
 }
@@ -1806,7 +1816,8 @@ function setActiveProject(index, { userInitiated = false, updateHistory = false 
   projectIndex.querySelectorAll(".project-row").forEach((row, rowIndex) => {
     const isActive = rowIndex === index;
     row.classList.toggle("is-active", isActive);
-    row.setAttribute("aria-pressed", String(isActive));
+    const selectButton = row.querySelector(".project-row-select") || row;
+    selectButton.setAttribute("aria-pressed", String(isActive));
   });
 
   stageNumber.textContent = padNumber(index);
@@ -2485,10 +2496,10 @@ function resetWormView({ waitForZoom = false } = {}) {
 function attachProjectInteractions() {
   projectIndex.querySelectorAll(".project-row").forEach((row) => {
     const index = Number(row.dataset.projectIndex);
-    row.addEventListener("click", () => setActiveProject(index, {
-      userInitiated: true,
-      updateHistory: true,
-    }));
+    row.addEventListener("click", (event) => {
+      if (event.target.closest(".project-repo-link")) return;
+      setActiveProject(index, { userInitiated: true, updateHistory: true });
+    });
     row.addEventListener("pointerenter", (event) => {
       if (event.pointerType === "pen") row.classList.add("is-pen-hover");
     });
