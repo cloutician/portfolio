@@ -96,7 +96,7 @@ const projects = [
         "Using ",
         { label: "REA", href: "https://github.com/morluto/rea" },
         " and ",
-        { label: "NSA’s Ghidra", href: "https://github.com/NationalSecurityAgency/ghidra/tree/master/GhidraDocs" },
+        { label: "the NSA’s Ghidra", href: "https://github.com/NationalSecurityAgency/ghidra/tree/master" },
         ", I recovered 373 assets from the original Android build and traced its native gameplay and camera logic. That work now informs my Switch remake for web and Android.",
       ],
       metrics: [],
