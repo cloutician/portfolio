@@ -90,9 +90,15 @@ const projects = [
     desc: "Recreating Atomicom’s arcade runner for web and Android.",
     tags: ["Web + Android", "Three.js", "Game remake"],
     evidence: {
-      eyebrow: "03 / Switch / Independent remake / In development",
-      title: "Recreating Switch for web and Android.",
-      summary: `I’m recreating Atomicom’s Switch for web and Android. The full game is roughly ${switchCompletion}% complete; the animated ship shown here is an interactive preview of that wider remake.`,
+      eyebrow: "03 / Switch / Reverse engineering + remake",
+      title: "Rebuilding Switch from recovered assets.",
+      summary: [
+        "Using ",
+        { label: "REA", href: "https://github.com/morluto/rea" },
+        " and ",
+        { label: "NSA’s Ghidra", href: "https://github.com/NationalSecurityAgency/ghidra/tree/master/GhidraDocs" },
+        ", I recovered 373 assets from the original Android build and traced its native gameplay and camera logic. That work now informs my Switch remake for web and Android.",
+      ],
       metrics: [],
       media: {
         src: "/assets/switch/original-game.webp",
@@ -101,14 +107,14 @@ const projects = [
       },
       pipelineLabel: "Switch project overview",
       pipeline: [
-        ["Switch", "Original game by Atomicom"],
-        ["Web + Android", "Target platforms"],
+        ["Recover", "373 original assets"],
+        ["Trace", "Native gameplay + camera logic"],
         [`~${switchCompletion}%`, "Full-game completion (estimate)"],
-        ["2026", "Year-end completion target"],
+        ["Web + Android", "Target platforms"],
       ],
       status: [
-        ["Why rebuild", "Legacy native-library issues stop the original running on my newer Android devices. Reverse engineering remains an open avenue, but the remake is how I’m moving the project forward."],
-        ["Current build", `Development is ongoing on the full game, with roughly ${switchCompletion}% of the remake complete. I’m aiming to finish before the end of 2026.`],
+        ["Breakthrough", "Recovered models, textures, shaders and audio now guide the remake, alongside native-code findings for track generation, movement and spawning. Unverified details remain documented."],
+        ["Current build", `The full game is roughly ${switchCompletion}% complete for web and Android. A shared weekly leaderboard is planned across platforms; the current focus is finishing and testing the remake.`],
       ],
     },
   },
@@ -132,7 +138,6 @@ const switchRocketSettings = {
   swapGroup: "switch-rockets",
   animation: "Thruster_Cycle",
   fitAnimation: true,
-  orbitAnchor: "Folded_Grey_Housing",
   defaultZoom: 3,
   expandViewport: true,
   autoRotateSpeed: 0.5,
@@ -152,8 +157,9 @@ const modelConfigs = {
     ...switchRocketSettings,
     key: "rocket-player",
     variantLabel: "Player",
-    url: "/assets/switch/switch-player-rocket-2026-10-27.glb",
-    effects: { type: "player-panels", strength: 0.085, redScale: 0.8 },
+    url: "/assets/switch/switch-player-rocket-2026-11-11.glb",
+    orbitAnchor: "Recovered_shell_and_refined_propulsion_assembly",
+    effects: { type: "player-panels", strength: 0.085, redScale: 0.8, panelMeshes: ["Recovered_red_markings"] },
     label: "Interactive 3D Switch player rocket with an ignition, thrust, shutdown and engine-off cycle. Drag to orbit. Magnification is fixed.",
     loading: "Loading player rocket…",
     error: "The player rocket could not be loaded.",
@@ -163,7 +169,8 @@ const modelConfigs = {
     ...switchRocketSettings,
     key: "rocket-enemy",
     variantLabel: "Enemy",
-    url: "/assets/switch/switch-enemy-rocket-2026-10-27.glb",
+    url: "/assets/switch/switch-enemy-rocket-2026-11-11.glb",
+    orbitAnchor: "ENEMY_AIRCRAFT_BODY_SHADER",
     effects: { type: "enemy-trim", strength: 0.055, radius: 0, threshold: 0.9 },
     label: "Interactive 3D Switch enemy rocket with an ignition, thrust, shutdown and engine-off cycle. Drag to orbit. Magnification is fixed.",
     loading: "Loading enemy rocket…",
@@ -1622,7 +1629,18 @@ function renderProjectEvidence(project, panel = projectEvidence, measureOnly = f
   panel.dataset.project = project.slug;
   evidenceEyebrow.textContent = evidence.eyebrow;
   evidenceTitle.textContent = evidence.title;
-  evidenceSummary.textContent = evidence.summary;
+  // Render linked copy as native text/link nodes, including in sizing probes.
+  const summaryParts = Array.isArray(evidence.summary) ? evidence.summary : [evidence.summary];
+  evidenceSummary.replaceChildren(...summaryParts.map((part) => {
+    if (typeof part === "string") return document.createTextNode(part);
+    const link = document.createElement("a");
+    link.textContent = part.label;
+    link.href = part.href;
+    link.target = "_blank";
+    link.rel = "noopener noreferrer";
+    link.setAttribute("aria-label", `${part.label} (opens in a new tab)`);
+    return link;
+  }));
   evidenceMetrics.hidden = !evidence.metrics.length;
   evidenceMedia.hidden = !evidence.media;
   evidencePipeline.setAttribute("aria-label", evidence.pipelineLabel || "Project pipeline");

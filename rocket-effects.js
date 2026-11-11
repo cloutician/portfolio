@@ -7,9 +7,9 @@ const vertexShader = `
   void main() { vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }
 `;
 
-function patchRedPanels(model) {
+function patchRedPanels(model, panelMeshes) {
   const materials = new Set();
-  for (const name of ["Red_F_Left", "Red_F_Right"]) {
+  for (const name of panelMeshes) {
     const panel = model.getObjectByName(name);
     if (!panel?.isMesh) throw new Error(`Missing player glow panel: ${name}`);
     for (const material of Array.isArray(panel.material) ? panel.material : [panel.material]) materials.add(material);
@@ -31,15 +31,15 @@ function patchRedPanels(model) {
     material.customProgramCacheKey = () => `${originalCacheKey}:portfolio-panel-red-chroma-v1`;
     material.needsUpdate = true;
   }
-  // The export already contains .35 * .8 red emission. Do not multiply it again.
+  // Keep the emission encoded in the export; the chroma correction is separate.
   return materials;
 }
 
 class PlayerPanelHalo {
-  constructor(renderer, record, { strength = 0.085, redScale = 0.8 } = {}) {
+  constructor(renderer, record, { strength = 0.085, redScale = 0.8, panelMeshes = ["Recovered_red_markings"] } = {}) {
     this.renderer = renderer;
     this.record = record;
-    this.redMaterials = patchRedPanels(record.model);
+    this.redMaterials = patchRedPanels(record.model, panelMeshes);
     this.maskScene = new THREE.Scene();
     this.black = new THREE.MeshBasicMaterial({ color: 0, side: THREE.DoubleSide, toneMapped: false });
     this.neon = new THREE.MeshBasicMaterial({ color: 0xff101b, side: THREE.DoubleSide, toneMapped: false });
@@ -47,7 +47,7 @@ class PlayerPanelHalo {
     record.model.traverse(source => {
       // Transparent exhaust and even opaque animated embers must never become
       // black depth occluders in the panel-only mask.
-      if (!source.isMesh || /^(?:Exhaust_(?:Orange_Glow|White_Core)$|Ember_)/.test(source.name)) return;
+      if (!source.isMesh || /^(?:Exhaust_|Ember_)/.test(source.name)) return;
       const sources = Array.isArray(source.material) ? source.material : [source.material];
       if (sources.every(material => material.transparent)) return;
       const materials = sources.map(material => this.redMaterials.has(material) ? this.neon : this.black);
