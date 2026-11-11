@@ -27,8 +27,8 @@ The original high-resolution camera captures are not included in this repository
 
 ### Switch player and enemy rockets
 
-- **Files:** `public/assets/switch/switch-player-rocket-2026-11-11-2a4a8571.glb` and `public/assets/switch/switch-enemy-rocket-2026-11-11-dfff5767.glb`
-- **Source:** Validated, corrected continuous-flame exports supplied by George Onyemenam from the Switch Runner project, 11 November 2026. These incorporate recovered shell geometry, refined propulsion assemblies, and continuous unlit exhaust surfaces with embedded alpha texture and morph animation. Filename content hashes distinguish them from the earlier same-date exports.
+- **Files:** `public/assets/switch/switch-player-rocket-2026-11-11-3f4d8bf9.glb` and `public/assets/switch/switch-enemy-rocket-2026-11-11-1c6204a4.glb`
+- **Source:** Validated, corrected continuous-flame exports supplied by George Onyemenam from the Switch Runner project, 11 November 2026. These incorporate recovered shell geometry, refined propulsion assemblies, and continuous unlit exhaust surfaces with colour/opacity gradients and morph animation. The latest exports contain no added noise/streak texture. Filename content hashes distinguish them from the earlier same-date exports.
 - **Animation:** Embedded `Thruster_Cycle`, a 6.4-second ignition, thrust, shutdown and engine-off loop
 - **Changes:** Both supplied GLBs are retained byte-for-byte. The portfolio adds camera framing, a seven-degree presentation wrapper, lighting, playback controls and rocket-specific glow. Exported geometry and material values are not rewritten. The player's shader colour correction and restrained panel halo follow the project's `rocket-panel-glow.js` reference, targeting the recovered red markings; the enemy's white bloom uses the reference inspector settings. Each orbit pivot uses solid hull geometry rather than animated exhaust.
 - **Reuse:** No additional redistribution licence is granted by its inclusion in the portfolio.
