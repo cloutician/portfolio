@@ -5,6 +5,8 @@ Devicon is MIT-licensed. The original geometry and colours are retained, with th
 
 Three.js uses `icons/threejs/threejs-original.svg` from the same pinned Devicon revision, with redundant editor styling removed and the original black geometry retained.
 
+Unity uses `icons/unity/unity-original.svg` from the same pinned Devicon revision, with its original geometry and colours retained.
+
 Java, AWS, Google Cloud, OpenCV and scikit-learn reuse the Devicon artwork already stored in the GitHub profile badges. AWS lettering is dark for this light surface.
 
 Codex displays the ChatGPT/OpenAI knot mark from [Lobe Icons, revision 8064bdc847be0a94c956c00440eb67586af2871f](https://github.com/lobehub/lobe-icons/blob/8064bdc847be0a94c956c00440eb67586af2871f/packages/static-svg/icons/openai.svg) (MIT), stored as `chatgpt.svg`. The original geometry is retained with dark lettering-colour fill for the light surface. Cursor and Claude reuse Simple Icons artwork (CC0). NVIDIA (CUDA) and ONNX also use Simple Icons (CC0).

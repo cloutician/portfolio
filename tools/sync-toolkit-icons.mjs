@@ -22,7 +22,7 @@ const devicons = {
   numpy: "numpy", pandas: "pandas", matplotlib: "matplotlib",
   jupyter: "jupyter", docker: "docker", linux: "linux",
   postgresql: "postgresql", spark: "apachespark", git: "git",
-  cmake: "cmake", "android-studio": "androidstudio",
+  cmake: "cmake", unity: "unity", "android-studio": "androidstudio",
 };
 
 const tasks = Object.entries(devicons).map(([name, source]) => async () => {

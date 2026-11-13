@@ -9,16 +9,23 @@ test('all toolkit proficiency colours match the supplied ratings, including Qt a
   const expected = {
     d: ['C++', 'Python', 'TensorFlow', 'OpenCV', 'Qt', 'NumPy', 'Jupyter', 'ilastik', 'AWS', 'Qt Creator', 'Codex'],
     s: ['Kotlin', 'TypeScript', 'Java', 'JavaScript', 'SQL', 'scikit-learn', 'ONNX Runtime', 'Android', 'Three.js', 'Node.js', 'pandas', 'Docker', 'PostgreSQL', 'Git', 'Android Studio', 'Cursor'],
-    y: ['PyTorch', 'Jetpack Compose', 'React', 'Matplotlib', 'CellProfiler', 'Google Cloud', 'Linux', 'Apache Spark', 'CMake'],
+    y: ['PyTorch', 'Jetpack Compose', 'React', 'Matplotlib', 'CellProfiler', 'Google Cloud', 'Linux', 'Apache Spark', 'CMake', 'Unity'],
     r: ['CUDA', 'Fiji / ImageJ', 'Claude'],
   };
   const entries = [...toolkit.matchAll(/<li data-proficiency="([dsyr])">[\s\S]*?<\/li>/g)];
-  assert.equal(entries.length, 39);
+  assert.equal(entries.length, 40);
   assert.equal((toolkit.match(/<li\b/g) || []).length, entries.length, 'Every toolkit entry must have a rating');
   for (const [rating, names] of Object.entries(expected)) {
     const actual = entries.filter(match => match[1] === rating).map(match => match[0].match(/>([^<>]+)<\/li>$/)[1]);
     assert.deepEqual(actual.sort(), [...names].sort());
   }
+});
+
+test('Unity belongs to Development tools and has a local scalable icon', () => {
+  const developmentTools = toolkit.slice(toolkit.indexOf('Development tools</h3>'));
+  assert.match(developmentTools, /<li data-proficiency="y"><img src="\/assets\/toolkit\/unity\.svg"[^>]+>Unity<\/li>/);
+  const icon = readFileSync(new URL('../public/assets/toolkit/unity.svg', import.meta.url), 'utf8');
+  assert.match(icon, /viewBox="0 0 128 128"/);
 });
 
 test('the standard green and original hover timing remain unchanged', () => {
