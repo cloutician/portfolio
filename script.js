@@ -3694,21 +3694,23 @@ function startWormLensVerticalReturn() {
 }
 
 function beginWormLensVerticalDrag(event, bounds) {
-  // Match the disc's current height across the whole pane, including mid-return.
+  // Direct lens grabs follow the pointer; line/pane drags give a lighter nudge.
   const lens = wormComparisonLens.getBoundingClientRect();
-  if (Math.abs(event.clientY - lens.top - lens.height / 2) > lens.height / 2) return;
+  const direct = Math.hypot(event.clientX - lens.left - lens.width / 2,
+    event.clientY - lens.top - lens.height / 2) <= lens.width / 2;
   const motion = wormLensVerticalMotion;
   pauseWormLensVerticalReturn();
   motion.velocity = 0;
   motion.height = bounds.height;
   const limit = Math.max(0, bounds.height / 2 - wormLensSize.rest * 1.08 / 2 - 4);
-  motion.drag = { pointerY: event.clientY, origin: unresistLensDrag(motion.offset, limit), limit };
+  motion.drag = { pointerY: event.clientY, origin: unresistLensDrag(motion.offset, limit), limit, gain: direct ? 1 : 0.25 };
 }
 
 function updateWormLensVerticalFromPointer(event) {
   const drag = wormLensVerticalMotion.drag;
   if (!drag) return;
-  updateWormLensVerticalOffset(resistLensDrag(drag.origin + event.clientY - drag.pointerY, drag.limit));
+  const offset = resistLensDrag(drag.origin + (event.clientY - drag.pointerY) * drag.gain, drag.limit);
+  if (offset !== wormLensVerticalMotion.offset) updateWormLensVerticalOffset(offset);
 }
 
 function updateSliderProximity(event, bounds = wormComparisonRange.getBoundingClientRect(), force = false) {

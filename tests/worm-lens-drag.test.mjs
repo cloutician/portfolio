@@ -88,40 +88,61 @@ test('the return has one restrained opposite-side overshoot, consistently across
   }
 });
 
-test('dragging above or below the lens band stays horizontal, without starting a vertical spring', () => {
+test('pure horizontal line dragging leaves the lens centred, without starting a vertical spring', () => {
   const f = fixture();
-  f.event('pointerdown', 580, 70); f.event('pointermove', 650, 370); f.event('pointerup', 650, 370);
+  f.event('pointerdown', 580, 70); f.event('pointermove', 650, 70); f.event('pointerup', 650, 70);
   assert.equal(Number(f.range.value), 65); assert.equal(f.motion.offset, 0);
   assert.equal(f.writes.length, 0); assert.equal(f.scheduled.size, 0); assert.equal(f.settles, 1);
 });
 
-test('the entire lens-height horizontal band enables elastic dragging away from the circle', () => {
+test('drags across the horizontal band away from the circle have a quarter-strength elastic response', () => {
   for (const x of [0, 60, 940, 1000]) {
     const f = fixture();
     f.event('pointerdown', x, 188);
     assert.ok(f.motion.drag, `Band contact at x=${x} enables vertical dragging`);
+    assert.equal(f.motion.drag.gain, 0.25);
     assert.equal(f.motion.offset, 0, 'The circle must not jump vertically to the contact point');
     f.event('pointermove', x, 260);
-    assert.ok(f.motion.offset > 0 && f.motion.offset < 72);
+    assert.equal(f.motion.offset, 18);
     f.event('pointerup', x, 260);
     for (let i = 0; f.scheduled.size && i < 150; i++) f.tick();
     assert.equal(f.motion.offset, 0); assert.ok(Math.min(...f.writes) < 0);
   }
 });
 
-test('a drag beginning just outside the band cannot become elastic midway through the gesture', () => {
+test('line drags above and below the band also give a gentle nudge in the drag direction', () => {
   for (const y of [175.99, 224.01]) {
     const f = fixture(); f.event('pointerdown', 80, y); f.event('pointermove', 90, 200);
-    assert.equal(f.motion.drag, null); assert.equal(f.motion.offset, 0);
+    assert.equal(f.motion.drag.gain, 0.25);
+    assert.equal(f.motion.offset, (200 - y) * 0.25);
   }
 });
 
-test('the horizontal activation band follows the displaced lens rather than its resting position', () => {
+test('re-grabbing a displaced lens or line keeps the correct response without a jump', () => {
   const f = fixture(); f.motion.offset = 120;
   f.event('pointerdown', 100, 320); f.event('pointermove', 110, 340);
   assert.ok(f.motion.drag); assert.ok(f.motion.offset > 120);
+  assert.equal(f.motion.drag.gain, 0.25);
+  const direct = fixture(); direct.motion.offset = 120; direct.event('pointerdown', 580, 320);
+  direct.event('pointermove', 580, 320);
+  assert.equal(direct.motion.drag.gain, 1);
+  assert.ok(Math.abs(direct.motion.offset - 120) < 1e-9);
   const outside = fixture(); outside.motion.offset = 120; outside.event('pointerdown', 100, 200);
-  assert.equal(outside.motion.drag, null);
+  outside.event('pointermove', 100, 200);
+  assert.equal(outside.motion.drag.gain, 0.25);
+  assert.ok(Math.abs(outside.motion.offset - 120) < 1e-9);
+});
+
+test('the same vertical gesture moves the circle much less when the line is grabbed', () => {
+  for (const direction of [-1, 1]) {
+    const line = fixture(), circle = fixture();
+    line.event('pointerdown', 100, 200); circle.event('pointerdown', 580, 200);
+    line.event('pointermove', 130, 200 + direction * 80);
+    circle.event('pointermove', 610, 200 + direction * 80);
+    assert.equal(line.motion.offset, direction * 20);
+    assert.ok(Math.abs(line.motion.offset) < Math.abs(circle.motion.offset) * .3);
+    assert.equal(line.motion.drag.gain, .25); assert.equal(circle.motion.drag.gain, 1);
+  }
 });
 
 test('circle dragging moves both axes; release preserves horizontal behaviour and returns vertically without an idle loop', () => {
