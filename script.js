@@ -1,4 +1,5 @@
 import { createWormLensWebGLRenderer } from "./worm-lens-webgl.js";
+import { resistLensDrag, unresistLensDrag, advanceLensReturn } from "./worm-lens-drag.js";
 import { PreviewAssetQueue, yieldPreviewWork, enqueuePreviewPreparation, createPreviewThumbnail } from "./preview-assets.js";
 import { InteractionHaptics } from "./interaction-haptics.js";
 
@@ -337,6 +338,7 @@ let wormLensTexturePrewarm = { index: -1, promise: null };
 let wormLensSize = { rest: 48, extent: 52 };
 let wormComparisonGeometry = { cropLeft: 0, cropWidth: 1, stageWidth: 0 };
 let wormComparisonLineX = 0;
+const wormLensVerticalMotion = { offset: 0, velocity: 0, frame: 0, time: 0, height: 0, drag: null };
 let wormSliderMotion = {
   value: 0,
   time: 0,
@@ -1434,11 +1436,14 @@ function syncProjectActivity() {
   const visible = projectIsVisible && !document.hidden;
   modelViewer?.setVisible(visible && !projectModelStage.hidden);
   if (!visible) {
+    if (wormSliderPointerId !== null) finishWormSliderDrag({ pointerId: wormSliderPointerId }, false);
+    pauseWormLensVerticalReturn();
     suspendTouchlinePlayback();
     cancelAnimationFrame(wormLensRenderAnimationFrame);
     wormLensRenderAnimationFrame = 0;
     wormLensRenderUntil = 0;
   } else {
+    startWormLensVerticalReturn();
     resumeTouchlinePlayback();
     if (!wormStage.hidden) {
       ensureWormReady().then(() => prewarmWormLensFrame(activeWormImage))
@@ -2225,15 +2230,16 @@ function getWormLensOpticalState(pixelRatio) {
   };
 }
 
-function captureWormLensFrame(lineX = null) {
+function captureWormLensFrame(lineX = null, offsetY = null) {
   if (!wormComparisonLens || wormCompare.hidden || !wormCompare.classList.contains("is-ready")) return;
 
   const currentRect = wormComparisonLens.getBoundingClientRect();
   if (!currentRect.width || !currentRect.height) return;
   const deltaX = lineX === null ? 0 : lineX - wormComparisonLineX;
+  const deltaY = offsetY === null ? 0 : offsetY - wormLensVerticalMotion.offset;
   const sampleRect = {
     left: currentRect.left + deltaX, right: currentRect.right + deltaX,
-    top: currentRect.top, bottom: currentRect.bottom,
+    top: currentRect.top + deltaY, bottom: currentRect.bottom + deltaY,
     width: currentRect.width, height: currentRect.height,
   };
 
@@ -2304,6 +2310,7 @@ function setWormLensScrollSuspended(suspended) {
   wormCompare.classList.toggle("is-page-scrolling", suspended);
 
   if (suspended) {
+    pauseWormLensVerticalReturn();
     wormLensRenderUntil = 0;
     if (wormLensRenderAnimationFrame) {
       cancelAnimationFrame(wormLensRenderAnimationFrame);
@@ -2330,6 +2337,7 @@ function resumeWormLensAfterScroll() {
   clearTimeout(wormLensScrollTimer);
   wormLensScrollTimer = 0;
   setWormLensScrollSuspended(false);
+  startWormLensVerticalReturn();
   requestWormLensRender();
 }
 
@@ -2474,6 +2482,7 @@ function zoomWormView() {
 }
 
 function resetWormView({ waitForZoom = false } = {}) {
+  resetWormLensVertical();
   invalidateWormLensGeometry(1200);
   clearTimeout(wormReadyTimer);
   clearTimeout(wormRasterTimer);
@@ -3531,6 +3540,10 @@ function writeWormLensScale(node, value) {
 }
 
 function syncWormLensSize() {
+  if (wormLensVerticalMotion.height && (wormLensVerticalMotion.offset || wormLensVerticalMotion.drag)
+      && Math.abs(wormComparisonRange.getBoundingClientRect().height - wormLensVerticalMotion.height) > 1) {
+    resetWormLensVertical();
+  }
   // Use the actual preview width, not a phone/desktop 24px/48px jump. This also
   // accommodates narrow desktop panels and tablet split-screen without a UA rule.
   const rest = Math.min(48, Math.max(28, 14.2222 + projectStage.clientWidth / 22.5));
@@ -3626,9 +3639,82 @@ function syncWormLensOptics() {
   }
 }
 
+function updateWormLensVerticalOffset(offset, renderNow = false) {
+  const canRender = !wormLensScrollSuspended && projectIsVisible && !document.hidden;
+  const snapshot = renderNow && canRender ? captureWormLensFrame(null, offset) : null;
+  wormLensVerticalMotion.offset = offset;
+  wormComparisonControl.style.setProperty("--lens-offset-y", `${offset}px`);
+  if (renderNow) {
+    cancelAnimationFrame(wormLensRenderAnimationFrame);
+    wormLensRenderAnimationFrame = 0;
+    if (canRender) renderWormLensView(snapshot);
+  } else requestWormLensRender();
+}
+
+function pauseWormLensVerticalReturn() {
+  cancelAnimationFrame(wormLensVerticalMotion.frame);
+  wormLensVerticalMotion.frame = 0;
+  wormLensVerticalMotion.time = 0;
+}
+
+function resetWormLensVertical() {
+  pauseWormLensVerticalReturn();
+  wormLensVerticalMotion.drag = null;
+  wormLensVerticalMotion.velocity = 0;
+  if (wormLensVerticalMotion.offset) updateWormLensVerticalOffset(0);
+}
+
+function animateWormLensVerticalReturn(time) {
+  const motion = wormLensVerticalMotion;
+  motion.frame = 0;
+  if (motion.drag || wormCompare.hidden || wormLensScrollSuspended || !projectIsVisible || document.hidden) {
+    motion.time = 0;
+    return;
+  }
+  const elapsed = motion.time ? Math.min(0.032, (time - motion.time) / 1000) : 1 / 120;
+  motion.time = time;
+  const next = advanceLensReturn(motion.offset, motion.velocity, elapsed);
+  motion.velocity = next.velocity;
+  updateWormLensVerticalOffset(next.offset, true);
+  if (!next.settled) motion.frame = requestAnimationFrame(animateWormLensVerticalReturn);
+  else motion.time = 0;
+}
+
+function startWormLensVerticalReturn() {
+  const motion = wormLensVerticalMotion;
+  if (motion.drag || !motion.offset || motion.frame) return;
+  if (reducedMotion) {
+    motion.velocity = 0;
+    updateWormLensVerticalOffset(0);
+    return;
+  }
+  if (!wormCompare.hidden && !wormLensScrollSuspended && projectIsVisible && !document.hidden) {
+    motion.frame = requestAnimationFrame(animateWormLensVerticalReturn);
+  }
+}
+
+function beginWormLensVerticalDrag(event, bounds) {
+  // The range covers the whole pane; use the visible disc, not that hit area.
+  const lens = wormComparisonLens.getBoundingClientRect();
+  if (Math.hypot(event.clientX - lens.left - lens.width / 2,
+    event.clientY - lens.top - lens.height / 2) > lens.width / 2) return;
+  const motion = wormLensVerticalMotion;
+  pauseWormLensVerticalReturn();
+  motion.velocity = 0;
+  motion.height = bounds.height;
+  const limit = Math.max(0, bounds.height / 2 - wormLensSize.rest * 1.08 / 2 - 4);
+  motion.drag = { pointerY: event.clientY, origin: unresistLensDrag(motion.offset, limit), limit };
+}
+
+function updateWormLensVerticalFromPointer(event) {
+  const drag = wormLensVerticalMotion.drag;
+  if (!drag) return;
+  updateWormLensVerticalOffset(resistLensDrag(drag.origin + event.clientY - drag.pointerY, drag.limit));
+}
+
 function updateSliderProximity(event, bounds = wormComparisonRange.getBoundingClientRect(), force = false) {
   const lineX = bounds.left + bounds.width * (Number(wormComparisonRange.value) / 100);
-  const handleY = bounds.top + bounds.height / 2;
+  const handleY = bounds.top + bounds.height / 2 + wormLensVerticalMotion.offset;
   const horizontalDistance = Math.abs(event.clientX - lineX);
   const handleDistance = Math.hypot(event.clientX - lineX, event.clientY - handleY);
   const inside = event.clientY >= bounds.top && event.clientY <= bounds.bottom;
@@ -3657,6 +3743,7 @@ function updateWormSliderFromPointer(event) {
     time,
     velocity,
   };
+  updateWormLensVerticalFromPointer(event);
   updateWormComparison(value);
   updateSliderProximity(event, bounds);
 }
@@ -3670,18 +3757,23 @@ function penCanStartSliderDrag(event) {
 }
 
 wormComparisonRange.addEventListener("pointerdown", (event) => {
+  if (wormSliderPointerId !== null) {
+    event.preventDefault();
+    return;
+  }
   if (!penCanStartSliderDrag(event)) {
     event.preventDefault();
     updateSliderProximity(event);
     return;
   }
   event.preventDefault();
+  const bounds = wormComparisonRange.getBoundingClientRect();
+  beginWormLensVerticalDrag(event, bounds);
   cancelAnimationFrame(wormAnimationFrame);
   wormSliderPointerId = event.pointerId;
   wormComparisonRange.setPointerCapture(event.pointerId);
   wormCompare.classList.add("is-dragging");
   syncWormLensOptics();
-  const bounds = wormComparisonRange.getBoundingClientRect();
   const value = wormSliderValueFromPointer(event, bounds);
   const time = performance.now();
   wormSliderMotion = {
@@ -3713,17 +3805,27 @@ wormCompare.addEventListener("pointerleave", () => {
 
 function finishWormSliderDrag(event, shouldSettle) {
   if (event.pointerId !== wormSliderPointerId) return;
+  wormSliderPointerId = null;
   if (wormComparisonRange.hasPointerCapture(event.pointerId)) {
     wormComparisonRange.releasePointerCapture(event.pointerId);
   }
-  wormSliderPointerId = null;
   wormCompare.classList.remove("is-dragging");
-  updateSliderProximity(event, undefined, true);
+  if (Number.isFinite(event.clientX)) updateSliderProximity(event, undefined, true);
+  else {
+    wormCompare.classList.remove("is-near");
+    syncWormLensOptics();
+  }
+  if (wormLensVerticalMotion.drag) {
+    wormLensVerticalMotion.drag = null;
+    wormLensVerticalMotion.velocity = 0;
+    startWormLensVerticalReturn();
+  }
   if (shouldSettle) settleWormComparison();
 }
 
 wormComparisonRange.addEventListener("pointerup", (event) => finishWormSliderDrag(event, true));
 wormComparisonRange.addEventListener("pointercancel", (event) => finishWormSliderDrag(event, false));
+wormComparisonRange.addEventListener("lostpointercapture", (event) => finishWormSliderDrag(event, false));
 wormComparisonRange.addEventListener("input", () => {
   if (wormSliderPointerId !== null) return;
   cancelAnimationFrame(wormAnimationFrame);

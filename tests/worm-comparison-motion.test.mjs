@@ -89,3 +89,18 @@ test('lens snapshots project the exact fractional next position before any style
   assert.equal(context.captureWormLensFrame().sampleRect.left, 100, 'Manual drawing measures its current position normally');
   assert.equal(bounds.left, 100, 'Do not mutate the measured DOM geometry');
 });
+
+test('vertical spring snapshots the next lens position in the same frame as its geometry', () => {
+  const capture = script.slice(script.indexOf('function captureWormLensFrame('), script.indexOf('function renderWormLensView('));
+  const context = vm.createContext({
+    wormComparisonLens: { getBoundingClientRect: () => ({ left: 100, right: 148, top: 200, bottom: 248, width: 48, height: 48 }) },
+    wormCompare: { hidden: false, classList: { contains: () => true } },
+    wormComparisonLineX: 250, wormLensVerticalMotion: { offset: 60 }, wormStage: {},
+    projectStage: { querySelectorAll: () => [] }, collectWormLensLayers: () => [],
+  });
+  vm.runInContext(capture, context);
+  const frame = context.captureWormLensFrame(300, 40);
+  assert.equal(frame.sampleRect.left, 150);
+  assert.equal(frame.sampleRect.top, 180);
+  assert.equal(frame.sampleRect.bottom, 228);
+});

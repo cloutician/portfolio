@@ -2416,6 +2416,7 @@ body.is-loaded .hero-scroll { transition-delay: 620ms; }
   --lens-line-overlap: 0.5px;
   --lens-size: var(--lens-rest-size);
   --lens-gap: calc(var(--lens-active-size) / 2);
+  --lens-offset-y: 0px;
   position: absolute;
   left: 0;
   top: 0;
@@ -2461,17 +2462,19 @@ body.is-loaded .hero-scroll { transition-delay: 620ms; }
 
 .comparison-line::before {
   top: 0;
+  height: calc(50% + var(--lens-offset-y) - var(--lens-gap) + var(--lens-line-overlap));
 }
 
 .comparison-line::after {
   bottom: 0;
+  height: calc(50% - var(--lens-offset-y) - var(--lens-gap) + var(--lens-line-overlap));
 }
 
 .comparison-ring {
   position: absolute;
   z-index: 3;
   left: 50%;
-  top: 50%;
+  top: calc(50% + var(--lens-offset-y));
   box-sizing: border-box;
   width: var(--lens-size);
   height: var(--lens-size);
@@ -2486,7 +2489,7 @@ body.is-loaded .hero-scroll { transition-delay: 620ms; }
   position: absolute;
   z-index: 1;
   left: 50%;
-  top: 50%;
+  top: calc(50% + var(--lens-offset-y));
   display: block;
   width: var(--lens-size);
   height: var(--lens-size);
@@ -2548,11 +2551,11 @@ body.is-loaded .hero-scroll { transition-delay: 620ms; }
 }
 
 .comparison-bridge::before {
-  top: calc(50% - var(--lens-active-size) / 2);
+  top: calc(50% + var(--lens-offset-y) - var(--lens-active-size) / 2);
 }
 
 .comparison-bridge::after {
-  bottom: calc(50% - var(--lens-active-size) / 2);
+  bottom: calc(50% - var(--lens-offset-y) - var(--lens-active-size) / 2);
 }
 
 .worm-compare.is-near .comparison-control,
