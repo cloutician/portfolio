@@ -3694,10 +3694,9 @@ function startWormLensVerticalReturn() {
 }
 
 function beginWormLensVerticalDrag(event, bounds) {
-  // The range covers the whole pane; use the visible disc, not that hit area.
+  // Match the disc's current height across the whole pane, including mid-return.
   const lens = wormComparisonLens.getBoundingClientRect();
-  if (Math.hypot(event.clientX - lens.left - lens.width / 2,
-    event.clientY - lens.top - lens.height / 2) > lens.width / 2) return;
+  if (Math.abs(event.clientY - lens.top - lens.height / 2) > lens.height / 2) return;
   const motion = wormLensVerticalMotion;
   pauseWormLensVerticalReturn();
   motion.velocity = 0;
