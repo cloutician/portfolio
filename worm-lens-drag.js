@@ -1,6 +1,14 @@
 // Keep the middle of the rail direct, then progressively resist the edges.
 const DIRECT_TRAVEL_FRACTION = 0.35;
 
+export function lensDragGain(distance, diameter) {
+  if (diameter <= 0) return 0.25;
+  const radius = diameter / 2;
+  // Full strength on the disc, fading to the gentle line response over one radius.
+  const progress = Math.max(0, Math.min(1, (distance - radius) / radius));
+  return 1 - 0.75 * progress * progress * (3 - 2 * progress);
+}
+
 export function resistLensDrag(offset, limit) {
   if (limit <= 0) return 0;
   const distance = Math.abs(offset), free = limit * DIRECT_TRAVEL_FRACTION, soft = limit - free;

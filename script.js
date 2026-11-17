@@ -1,5 +1,5 @@
 import { createWormLensWebGLRenderer } from "./worm-lens-webgl.js";
-import { resistLensDrag, unresistLensDrag, advanceLensReturn } from "./worm-lens-drag.js";
+import { lensDragGain, resistLensDrag, unresistLensDrag, advanceLensReturn } from "./worm-lens-drag.js";
 import { PreviewAssetQueue, yieldPreviewWork, enqueuePreviewPreparation, createPreviewThumbnail } from "./preview-assets.js";
 import { InteractionHaptics } from "./interaction-haptics.js";
 
@@ -3694,16 +3694,16 @@ function startWormLensVerticalReturn() {
 }
 
 function beginWormLensVerticalDrag(event, bounds) {
-  // Direct lens grabs follow the pointer; line/pane drags give a lighter nudge.
+  // Capture proximity once, so the lens chasing the pointer cannot change the gain mid-drag.
   const lens = wormComparisonLens.getBoundingClientRect();
-  const direct = Math.hypot(event.clientX - lens.left - lens.width / 2,
-    event.clientY - lens.top - lens.height / 2) <= lens.width / 2;
+  const distance = Math.hypot(event.clientX - lens.left - lens.width / 2,
+    event.clientY - lens.top - lens.height / 2);
   const motion = wormLensVerticalMotion;
   pauseWormLensVerticalReturn();
   motion.velocity = 0;
   motion.height = bounds.height;
   const limit = Math.max(0, bounds.height / 2 - wormLensSize.rest * 1.08 / 2 - 4);
-  motion.drag = { pointerY: event.clientY, origin: unresistLensDrag(motion.offset, limit), limit, gain: direct ? 1 : 0.25 };
+  motion.drag = { pointerY: event.clientY, origin: unresistLensDrag(motion.offset, limit), limit, gain: lensDragGain(distance, lens.width) };
 }
 
 function updateWormLensVerticalFromPointer(event) {

@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import vm from 'node:vm';
-import { resistLensDrag, unresistLensDrag, advanceLensReturn } from '../worm-lens-drag.js';
+import { lensDragGain, resistLensDrag, unresistLensDrag, advanceLensReturn } from '../worm-lens-drag.js';
 
 const script = readFileSync(new URL('../script.js', import.meta.url), 'utf8');
 const controls = script.slice(script.indexOf('function updateWormLensVerticalOffset('));
@@ -20,7 +20,7 @@ function fixture(reducedMotion = false) {
     addEventListener: (type, callback) => { handlers[type] = callback; },
   };
   const context = vm.createContext({
-    resistLensDrag, unresistLensDrag, advanceLensReturn,
+    lensDragGain, resistLensDrag, unresistLensDrag, advanceLensReturn,
     wormLensVerticalMotion: motion, wormLensSize: { rest: 48 }, wormComparisonRange: range,
     wormComparisonLens: { getBoundingClientRect: () => ({
       left: Number(range.value) * 10 - 24, top: 176 + motion.offset, width: 48, height: 48,
@@ -54,6 +54,30 @@ function fixture(reducedMotion = false) {
     },
   };
 }
+
+test('proximity fades smoothly from full strength to quarter strength over half a diameter beyond the edge', () => {
+  for (const diameter of [28, 36, 48, 60]) {
+    const radius = diameter / 2;
+    assert.equal(lensDragGain(0, diameter), 1);
+    assert.equal(lensDragGain(radius, diameter), 1);
+    assert.equal(lensDragGain(radius * 1.25, diameter), .8828125);
+    assert.equal(lensDragGain(radius * 1.5, diameter), .625);
+    assert.equal(lensDragGain(radius * 1.75, diameter), .3671875);
+    assert.equal(lensDragGain(radius * 2, diameter), .25);
+    assert.equal(lensDragGain(diameter * 20, diameter), .25);
+    assert.ok(1 - lensDragGain(radius + 0.001, diameter) < 1e-6, 'No hard step at the circle edge');
+  }
+});
+
+test('nearby grabs use their initial proportional gain without jumping or changing strength mid-drag', () => {
+  const f = fixture();
+  f.event('pointerdown', 616, 200); // 36px from a 24px-radius lens: gain .625.
+  assert.equal(f.motion.drag.gain, .625); assert.equal(f.motion.offset, 0);
+  f.event('pointermove', 616, 220);
+  assert.equal(f.motion.offset, 12.5); assert.equal(f.motion.drag.gain, .625);
+  f.event('pointermove', 580, 240);
+  assert.equal(f.motion.offset, 25); assert.equal(f.motion.drag.gain, .625);
+});
 
 test('vertical resistance is direct in the middle, smooth, symmetric and bounded near either edge', () => {
   assert.equal(resistLensDrag(40, 200), 40);
